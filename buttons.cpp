@@ -8,18 +8,16 @@ ToggleButton::ToggleButton(){
 	width = 0;
 	height = 0;
 	pixels = nullptr;
-	windowWidth = 0;
 }
-ToggleButton::ToggleButton(unsigned int setX, unsigned int setY, unsigned int setWidth, unsigned int setHeight, Uint32*& setPixels, unsigned int setWindowWidth){
+ToggleButton::ToggleButton( unsigned int setX, unsigned int setY, unsigned int setWidth, unsigned int setHeight, Uint32*& setPixels ){
 	x = setX;
 	y = setY;
 	width = setWidth;
 	height = setHeight;
 	pixels = setPixels;
-	windowWidth = setWindowWidth;
 }
 
-void ToggleButton::draw( unsigned int mouseX, unsigned int mouseY, bool mousePressed ){
+void ToggleButton::draw( unsigned int mouseX, unsigned int mouseY, bool mousePressed, unsigned int windowWidth ){
 	if( mouseX >= x && mouseX <= x+width  &&  mouseY >= y && mouseY <= y+height ){
 		if( mousePressed ){
 			held = true;
@@ -27,7 +25,6 @@ void ToggleButton::draw( unsigned int mouseX, unsigned int mouseY, bool mousePre
 		}
 		else{
 			if( held ){
-				held = false;
 				pressed = !pressed;
 			}
 		if( pressed ){ usedColor = onColor; }
@@ -37,6 +34,9 @@ void ToggleButton::draw( unsigned int mouseX, unsigned int mouseY, bool mousePre
 	else{
 		if( pressed ){ usedColor = onColor; }
 		else{ usedColor = offColor; }
+	}
+	if( held && !mousePressed ){
+		held = false;
 	}
 	for( unsigned int setY = y; setY < y+height; setY ++ ){
 		for( unsigned int setX = x; setX<x+width; setX ++ ){
@@ -52,18 +52,16 @@ PushButton::PushButton(){
 	width = 0;
 	height = 0;
 	pixels = nullptr;
-	windowWidth = 0;
 }
-PushButton::PushButton(unsigned int setX, unsigned int setY, unsigned int setWidth, unsigned int setHeight, Uint32*& setPixels, unsigned int setWindowWidth){
+PushButton::PushButton( unsigned int setX, unsigned int setY, unsigned int setWidth, unsigned int setHeight, Uint32*& setPixels ){
 	x = setX;
 	y = setY;
 	width = setWidth;
 	height = setHeight;
 	pixels = setPixels;
-	windowWidth = setWindowWidth;
 }
 
-void PushButton::draw( unsigned int mouseX, unsigned int mouseY, bool mousePressed ){
+void PushButton::draw( unsigned int mouseX, unsigned int mouseY, bool mousePressed, unsigned int windowWidth ){
 	if( mouseX >= x && mouseX <= x+width  &&  mouseY >= y && mouseY <= y+height ){
 		released = false;
 		if( mousePressed ){
@@ -76,7 +74,6 @@ void PushButton::draw( unsigned int mouseX, unsigned int mouseY, bool mousePress
 		}
 		else{
 			if( held ){
-				held = false;
 				released = true;
 			}
 			usedColor = hoverColor;
@@ -84,6 +81,9 @@ void PushButton::draw( unsigned int mouseX, unsigned int mouseY, bool mousePress
 	}
 	else{
 		usedColor = offColor;
+	}
+	if( held && !mousePressed ){
+		held = false;
 	}
 	for( unsigned int setY = y; setY < y+height; setY ++ ){
 		for( unsigned int setX = x; setX<x+width; setX ++ ){

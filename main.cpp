@@ -12,18 +12,19 @@ void set( unsigned int x, unsigned int y, Color color );
 inline float square( float num ){return num * num;}
 inline float dist2DSq( float x1, float y1, float x2, float y2 );
 
-unsigned int windowWidth = 640;//600
-unsigned int windowHeight = 640;//420
-Uint32* pixels = new Uint32[ windowWidth * windowHeight ];
+unsigned int windowWidth;//600
+unsigned int windowHeight;//420
+Uint32* pixels;
 unsigned int frameCount = 0;
 unsigned int mouseX = windowWidth/2;
 unsigned int mouseY = windowHeight/2;
+unsigned int shortDim;
 bool mousePressed;
 //float xPull = 0;
 //float yPull = 0;
 double potential;
-double x;
-double y;
+double x, y;
+double normX, normY;
 int shade;
 int displayMode = 1;
 int colorMode = 2;
@@ -31,50 +32,60 @@ int systemNum = 2;
 unsigned char r=0, g=0, b=0;
 unsigned int detail = 1;
 
-PushButton button1;
+float sclMouseX;
+float sclMouseY;
+unsigned int setX;
+unsigned int setY;
 
+PushButton button1;
+ToggleButton button2;
 
 void setup(){
-	button1 = PushButton(10, 10, 50, 30, pixels, windowWidth);
+	button1 = PushButton(10, 10, 50, 30, pixels);
+	button2 = ToggleButton(70, 10, 50, 30, pixels);
+	button2.pressed = true;
 }
 
 
 void loop(){
-	float sclMouseX = mouseX*1.0/windowWidth;
-	float sclMouseY = mouseY*1.0/windowHeight;
-	Color color;
+	sclMouseX = mouseX*1.0/shortDim;
+	sclMouseY = mouseY*1.0/shortDim;
 
-	if( displayMode == 1 ){
-		memset(pixels, 127, ( sizeof(Uint32) ) * windowWidth * windowHeight);
-	}
-	for( unsigned int screenX = 0; screenX < windowWidth; screenX ++ ){
-		for( unsigned int screenY = 0; screenY < windowHeight; screenY ++ ){
+	memset(pixels, 127, ( sizeof(Uint32) ) * windowWidth * windowHeight);
+
+	for( unsigned int screenX = windowWidth-1; screenX < windowWidth; screenX -- ){
+		for( unsigned int screenY = windowHeight-1; screenY < windowWidth; screenY -- ){
 			for(unsigned int subX = 0; subX < detail; subX ++ ){
 				for( unsigned int subY = 0; subY < detail; subY ++ ){
-					x = ( screenX*1.0 + subX / detail)  /  windowWidth;
-					y = ( screenY*1.0 + subY / detail)  /  windowWidth;
+					x = ( screenX*1.0 + subX*1.0 / detail)  /  (windowWidth - 1);
+					y = ( screenY*1.0 + subY*1.0 / detail)  /  (windowHeight - 1);
+
+					normX = x*windowWidth/shortDim;
+					normY = y*windowHeight/shortDim;
+
 					//xPull = -2550/dist2DSq( x, y, windowWidth/2, windowHeight/2 )  +  2550/dist2DSq( x, y, sclMouseX, sclMouseY );
 					if( systemNum == 0 ){
-						potential = -0.5 / sqrt( dist2DSq( x, y, 0.5, 0.5 ) )  +  1 / sqrt( dist2DSq( x, y, sclMouseX, sclMouseY ) ) - 0.25 / sqrt( dist2DSq( x, y, 1, 0 ) );
+						potential = -0.5 / sqrt( dist2DSq( normX, normY, 0.5, 0.5 ) )  +  1 / sqrt( dist2DSq( normX, normY, sclMouseX, sclMouseY ) ) - 0.25 / sqrt( dist2DSq( normX, normY, 0, 1 ) );
 						//shade = (int)( potential * 128 ) + 256;
 					}
 					else if( systemNum == 1 ){
-						potential = 4 / sqrt( dist2DSq( x, y, 0.75, 0.5 ) ) - 1 / sqrt( dist2DSq( x, y, 0.5, 0.5 ) );
+						potential = 4 / sqrt( dist2DSq( normX, normY, 0.25, 0.5 ) ) - 1 / sqrt( dist2DSq( normX, normY, 0.75, 0.5 ) );
 						//shade = (int)( potential * 128 ) + 256; + (sclMouseY - 0.5)*20*255;
 					}
 					else if( systemNum == 2 ){
-						potential = (2*sclMouseY - 1) / sqrt( dist2DSq( x, y, 0.25, 0.75 ) ) + 1 / sqrt( dist2DSq( x, y, 0.75, 0.25 ) );
+						potential = (2*sclMouseY - 1) / sqrt( dist2DSq( normX, normY, 0.25, 0.75 ) ) + 1 / sqrt( dist2DSq( normX, normY, 0.75, 0.25 ) );
 					}
-					color = getColor( potential, colorMode );
 
 					if( displayMode == 0 ){
-						set( screenX, screenY, color );
+						if( pixels[ (screenY * windowWidth) + screenX ] == 0x7f7f7f7f ){
+							set( screenX, screenY, getColor( potential, colorMode ) );
+						}
 					}
 					else if( displayMode == 1 ){
-						unsigned int setX = (unsigned int) (  windowWidth * (0.5 + y/2 - x/2)  );
-						unsigned int setY = (unsigned int) (  windowHeight * (1 - x/8 - y/8 - 0.375) - potential*4  );
-						if( setY < windowHeight  &&  setY > 0  &&  pixels[ (setY * windowWidth) + setX ] == 2139062143 ){
-							set( setX, setY, color );
+						setX = (unsigned int) (  ( (x * windowWidth) + ((1 - y) * windowHeight) ) * (windowWidth - 1) / (windowWidth + windowHeight)  );
+						setY = (unsigned int) (  windowHeight * (0.375 + x/8 + y/8) - potential*4  );
+						if( setY < windowHeight  &&  setY > 0  &&  pixels[ (setY * windowWidth) + setX ] == 0x7f7f7f7f ){
+							set( setX, setY, getColor( potential, colorMode ) );
 						}
 					}
 				}
@@ -84,11 +95,21 @@ void loop(){
 	/*if( (frameCount % 30) == 0 ){
 		printf("xPull: %f\n", xPull);
 	}*/
-	button1.draw(mouseX, mouseY, mousePressed);
+	button1.draw(mouseX, mouseY, mousePressed, windowWidth);
+	button2.draw(mouseX, mouseY, mousePressed, windowWidth);
 	if( button1.released ){
 		systemNum ++;
 		if( systemNum > 2 ){ systemNum = 0; }
 	}
+	if( button2.pressed ){
+		displayMode = 1;
+		colorMode = 2;
+	}
+	else{
+		displayMode = 0;
+		colorMode = 0;
+	}
+
 }
 
 
@@ -99,15 +120,17 @@ int main(){
 	SDL_Texture* buffer = nullptr;
 	bool quit = false;
     SDL_Event event;
-	SDL_GetCurrentDisplayMode( 0, &DM );
-	//printf("width: %i, ", DM.w);
-	//printf("height: %i\n", DM.h);
-	//windowWidth = DM.w;
-	//windowHeight = DM.h;
 	if(SDL_Init( SDL_INIT_VIDEO ) < 0){
 		printf( "SDL could not initialize.  SDL_Error: %s\n", SDL_GetError() );
 	}
 	else{
+		SDL_GetCurrentDisplayMode( 0, &DM );
+		windowWidth = DM.w*3/4;
+		windowHeight = DM.h*3/4;
+		if( windowWidth <= windowHeight){ shortDim = windowWidth; }
+		else{ shortDim = windowHeight; }
+		pixels = new Uint32[ windowWidth * windowHeight ];
+
 		window = SDL_CreateWindow( "Charge Graphs", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, windowWidth, windowHeight, SDL_WINDOW_RESIZABLE );//used to end with "SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI" instead of "0".  For resizable, should be SDL_WINDOW_RESIZABLE.
 		if( window == NULL ){
 			printf( "Window could not be created! SDL_Error: %s\n", SDL_GetError() );
@@ -142,13 +165,16 @@ int main(){
 							mousePressed = false;
 					}
 					else if( event.type == SDL_WINDOWEVENT ){
-						switch( event.window.event ){
-							case SDL_WINDOWEVENT_RESIZED:
-								windowWidth = event.window.data2;
-								windowHeight = event.window.data1;
-								pixels = new Uint32[ windowWidth * windowHeight ];
-								SDL_DestroyTexture( buffer );
-								buffer = SDL_CreateTexture( renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, windowWidth, windowHeight );
+						if( event.window.event == SDL_WINDOWEVENT_RESIZED ){
+							windowWidth = event.window.data1;
+							windowHeight = event.window.data2;
+							//SDL_GetWindowSize(window, &windowWidth, &windowHeight);
+							if( windowWidth <= windowHeight){ shortDim = windowWidth; }
+							else{ shortDim = windowHeight; }
+							delete pixels;
+							pixels = new Uint32[ windowWidth * windowHeight ];
+							SDL_DestroyTexture( buffer );
+							buffer = SDL_CreateTexture( renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, windowWidth, windowHeight );
 						}
 					}
 				}
