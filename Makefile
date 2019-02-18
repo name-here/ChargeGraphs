@@ -1,5 +1,5 @@
 CPP = g++
-CPPFLAGS = -g -O3 -Wall -Wextra -pedantic -std=c++11 `sdl2-config --cflags`
+CPPFLAGS = -g -O3 -Wall -Wextra -pedantic -std=c++14 `sdl2-config --cflags`
 PKGFLAGS = `sdl2-config --libs`
 DEPS = buttons.h
 OBJ = buttons.o main.o

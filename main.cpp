@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <cmath>
 #include <cstdio>
+#include <vector>
 #include "buttons.h"
 
 struct Color{ uint8_t r; uint8_t g; uint8_t b; };
@@ -9,33 +10,50 @@ struct Color{ uint8_t r; uint8_t g; uint8_t b; };
 Color getColor( double potential, int colorMode );
 Color hueRGB(uint8_t hue);
 void set( unsigned int x, unsigned int y, Color color );
-inline float square( float num ){return num * num;}
-inline float dist2DSq( float x1, float y1, float x2, float y2 );
+inline double square( double num ){return num * num;}
+inline double cube( double num ){return num * num * num;}
+inline double dist2DSq( double x1, double y1, double x2, double y2 ){
+	return square( x2 - x1 ) + square( y2 - y1 );
+}
+inline double dist2D( double x1, double y1, double x2, double y2 ){
+	return sqrt(  dist2DSq( x1, y1, x2, y2 )  );
+}
+void addParticle( double setCharge, double setParticleX, double setParticleY, double setParticleVelX, double setParticleVelY, char setProperties );//make inline?
 
 unsigned int windowWidth;//600
 unsigned int windowHeight;//420
+unsigned int shortDim;
 Uint32* pixels;
 unsigned int frameCount = 0;
+
 unsigned int mouseX = windowWidth/2;
 unsigned int mouseY = windowHeight/2;
-unsigned int shortDim;
+double sclMouseX;
+double sclMouseY;
 bool mousePressed;
-//float xPull = 0;
-//float yPull = 0;
-double potential;
+
+unsigned int detail = 1;
 double x, y;
 double normX, normY;
-int shade;
+unsigned int setX, setY;
+
+double potential;
+double intermediate;
+double xPull = 0, yPull = 0;
+
 int displayMode = 1;
 int colorMode = 2;
 int systemNum = 2;
-unsigned char r=0, g=0, b=0;
-unsigned int detail = 1;
+int shade;
 
-float sclMouseX;
-float sclMouseY;
-unsigned int setX;
-unsigned int setY;
+std::vector<double> particleCharge;
+std::vector<double> particleX;//position of particles
+std::vector<double> particleY;
+std::vector<double> particleVelX;//velocity of particles
+std::vector<double> particleVelY;
+std::vector<char> particleProperties;
+//particleProperties is a series of switches for properties of particle, in order:
+//feels force | exerts force | unused | unused | unused | unused | unused | unused
 
 PushButton button1;
 ToggleButton button2;
@@ -44,6 +62,9 @@ void setup(){
 	button1 = PushButton(10, 10, 50, 30, pixels);
 	button2 = ToggleButton(70, 10, 50, 30, pixels);
 	button2.pressed = true;
+
+	addParticle( 1, 0.25, 0.5, 0, 0, 0b11000000 );
+	addParticle( -1, 0.75, 0.5, 0, 0, 0b11000000 );
 }
 
 
@@ -51,7 +72,9 @@ void loop(){
 	sclMouseX = mouseX*1.0/shortDim;
 	sclMouseY = mouseY*1.0/shortDim;
 
-	memset(pixels, 127, ( sizeof(Uint32) ) * windowWidth * windowHeight);
+	//if( displayMode == 1 ){
+		memset(pixels, 127, ( sizeof(Uint32) ) * windowWidth * windowHeight);
+	//}
 
 	for( unsigned int screenX = windowWidth-1; screenX < windowWidth; screenX -- ){
 		for( unsigned int screenY = windowHeight-1; screenY < windowWidth; screenY -- ){
@@ -63,17 +86,16 @@ void loop(){
 					normX = x*windowWidth/shortDim;
 					normY = y*windowHeight/shortDim;
 
-					//xPull = -2550/dist2DSq( x, y, windowWidth/2, windowHeight/2 )  +  2550/dist2DSq( x, y, sclMouseX, sclMouseY );
 					if( systemNum == 0 ){
-						potential = -0.5 / sqrt( dist2DSq( normX, normY, 0.5, 0.5 ) )  +  1 / sqrt( dist2DSq( normX, normY, sclMouseX, sclMouseY ) ) - 0.25 / sqrt( dist2DSq( normX, normY, 0, 1 ) );
+						potential = -0.5 / dist2D( normX, normY, 0.5, 0.5 )  +  1 / dist2D( normX, normY, sclMouseX, sclMouseY ) - 0.25 / dist2D( normX, normY, 0, 1 );
 						//shade = (int)( potential * 128 ) + 256;
 					}
 					else if( systemNum == 1 ){
-						potential = 4 / sqrt( dist2DSq( normX, normY, 0.25, 0.5 ) ) - 1 / sqrt( dist2DSq( normX, normY, 0.75, 0.5 ) );
+						potential = 4 / dist2D( normX, normY, 0.25, 0.5 ) - 1 / dist2D( normX, normY, 0.75, 0.5 );
 						//shade = (int)( potential * 128 ) + 256; + (sclMouseY - 0.5)*20*255;
 					}
 					else if( systemNum == 2 ){
-						potential = (2*sclMouseY - 1) / sqrt( dist2DSq( normX, normY, 0.25, 0.75 ) ) + 1 / sqrt( dist2DSq( normX, normY, 0.75, 0.25 ) );
+						potential = (1 - 2*sclMouseY) / dist2D( normX, normY, 0.25, 0.75 ) + 1 / dist2D( normX, normY, 0.75, 0.25 );
 					}
 
 					if( displayMode == 0 ){
@@ -87,6 +109,16 @@ void loop(){
 						if( setY < windowHeight  &&  setY > 0  &&  pixels[ (setY * windowWidth) + setX ] == 0x7f7f7f7f ){
 							set( setX, setY, getColor( potential, colorMode ) );
 						}
+					}
+					else if( displayMode == 2 ){
+						Color color;
+						intermediate = 1 / cube( dist2D(normX, normY, sclMouseX, sclMouseY) );
+						xPull = intermediate * (sclMouseX - normX);
+						yPull = intermediate * (sclMouseY - normY);
+						color.r = 0;
+						color.g = abs((int)(yPull)%255);
+						color.b = abs((int)(xPull)%255);
+						set( screenX, screenY, color );
 					}
 				}
 			}
@@ -102,7 +134,7 @@ void loop(){
 		if( systemNum > 2 ){ systemNum = 0; }
 	}
 	if( button2.pressed ){
-		displayMode = 1;
+		displayMode = 2;
 		colorMode = 2;
 	}
 	else{
@@ -193,6 +225,7 @@ Color getColor( double potential, int colorMode ){
 	Color color;
 	shade = (int)( potential * 128 ) + 256;
 	if( colorMode == 0 ){
+		shade /= 5;
 		if( shade>255 ) { shade = 255; }
 		if( shade<0 ) { shade = 0; }
 	}
@@ -254,8 +287,13 @@ Color hueRGB(uint8_t hue){
 	return color;
 }
 
-inline float dist2DSq( float x1, float y1, float x2, float y2 ){
-	return square( x2 - x1 ) + square( y2 - y1 );
+void addParticle( double setCharge, double setParticleX, double setParticleY, double setParticleVelX, double setParticleVelY, char setProperties ){
+	particleCharge.push_back( setCharge );
+	particleX.push_back( setParticleX );
+	particleY.push_back( setParticleY );
+	particleVelX.push_back( setParticleVelX );
+	particleVelY.push_back( setParticleVelY );
+	particleProperties.push_back( setProperties );
 }
 
 void set( unsigned int x, unsigned int y, Color color ){
