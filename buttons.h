@@ -5,7 +5,7 @@ class ToggleButton{
 public:
 	unsigned int x, y, width, height;
 	bool justPressed = false;//button was just pressed last frame
-	bool pressed = false;//button is active (toggled on)
+	bool isPressed = false;//button is active (toggled on)
 	bool held = false;//button is being pressed by mouse right now (mouse pressed and on button)
 	Uint32* pixels;
 

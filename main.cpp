@@ -6,6 +6,7 @@
 #include "buttons.h"
 
 struct Color{ uint8_t r; uint8_t g; uint8_t b; };
+struct Particle{ double charge; double x; double y; double velX; double velY; char properties; unsigned int id; };
 
 Color getColor( double potential, int colorMode );
 Color hueRGB(uint8_t hue);
@@ -39,32 +40,31 @@ unsigned int setX, setY;
 
 double potential;
 double intermediate;
-double xPull = 0, yPull = 0;
+double fieldX = 0, fieldY = 0;
 
 int displayMode = 1;
 int colorMode = 2;
-int systemNum = 2;
 int shade;
 
-std::vector<double> particleCharge;
-std::vector<double> particleX;//position of particles
-std::vector<double> particleY;
-std::vector<double> particleVelX;//velocity of particles
-std::vector<double> particleVelY;
-std::vector<char> particleProperties;
+std::vector<Particle> particles;
 //particleProperties is a series of switches for properties of particle, in order:
-//feels force | exerts force | unused | unused | unused | unused | unused | unused
+//feels force | exerts force | mark location (2D only) | unused | unused | unused | unused | unused
 
-PushButton button1;
-ToggleButton button2;
+//ToggleButton button1;//Changes positive/negative charges placed on click
+ToggleButton button2;//Toggles 2D/3D
 
 void setup(){
-	button1 = PushButton(10, 10, 50, 30, pixels);
-	button2 = ToggleButton(70, 10, 50, 30, pixels);
-	button2.pressed = true;
+	/*button1 = ToggleButton(10, 10, 50, 30, pixels);
+	button1.offColor = 0xff00ff00;
+	button1.onColor = 0xffff0000;
+	button1.pressedColor = 0xff888800;*/
+	button2 = ToggleButton(windowWidth - 60, 10, 50, 30, pixels);
 
-	addParticle( 1, 0.25, 0.5, 0, 0, 0b11000000 );
-	addParticle( -1, 0.75, 0.5, 0, 0, 0b11000000 );
+	addParticle( 1, 0.25, 0.25, 0, 0, 0b01000000 );
+	addParticle( 1, 0.75, 0.25, 0, 0, 0b01000000 );
+	addParticle( 1, 0.25, 0.75, 0, 0, 0b01000000 );
+	addParticle( 1, 0.75, 0.75, 0, 0, 0b01000000 );
+	addParticle( 3, 0.4, 0.5, 0, 0.00001, 0b11000000 );
 }
 
 
@@ -72,9 +72,10 @@ void loop(){
 	sclMouseX = mouseX*1.0/shortDim;
 	sclMouseY = mouseY*1.0/shortDim;
 
-	//if( displayMode == 1 ){
-		memset(pixels, 127, ( sizeof(Uint32) ) * windowWidth * windowHeight);
-	//}
+	memset(pixels, 127, ( sizeof(Uint32) ) * windowWidth * windowHeight);
+
+	//particles.front().x = sclMouseX;
+	//particles.front().y = sclMouseY;
 
 	for( unsigned int screenX = windowWidth-1; screenX < windowWidth; screenX -- ){
 		for( unsigned int screenY = windowHeight-1; screenY < windowWidth; screenY -- ){
@@ -86,16 +87,11 @@ void loop(){
 					normX = x*windowWidth/shortDim;
 					normY = y*windowHeight/shortDim;
 
-					if( systemNum == 0 ){
-						potential = -0.5 / dist2D( normX, normY, 0.5, 0.5 )  +  1 / dist2D( normX, normY, sclMouseX, sclMouseY ) - 0.25 / dist2D( normX, normY, 0, 1 );
-						//shade = (int)( potential * 128 ) + 256;
-					}
-					else if( systemNum == 1 ){
-						potential = 4 / dist2D( normX, normY, 0.25, 0.5 ) - 1 / dist2D( normX, normY, 0.75, 0.5 );
-						//shade = (int)( potential * 128 ) + 256; + (sclMouseY - 0.5)*20*255;
-					}
-					else if( systemNum == 2 ){
-						potential = (1 - 2*sclMouseY) / dist2D( normX, normY, 0.25, 0.75 ) + 1 / dist2D( normX, normY, 0.75, 0.25 );
+					potential = 0;
+					for( auto i = particles.begin(); i!=particles.end(); ++i ){
+						if( (*i).properties & 0b01000000 ){
+							potential += (*i).charge / dist2D( normX, normY, (*i).x, (*i).y );
+						}
 					}
 
 					if( displayMode == 0 ){
@@ -112,34 +108,54 @@ void loop(){
 					}
 					else if( displayMode == 2 ){
 						Color color;
-						intermediate = 1 / cube( dist2D(normX, normY, sclMouseX, sclMouseY) );
-						xPull = intermediate * (sclMouseX - normX);
-						yPull = intermediate * (sclMouseY - normY);
+						fieldX = 0; fieldY = 0;
+						for( auto i = particles.begin(); i!=particles.end(); ++i ){
+							intermediate = 1 / cube( dist2D(normX, normY, (*i).x, (*i).y) );
+							fieldX += intermediate * ( (*i).x - normX );
+							fieldY += intermediate * ( (*i).y - normY );
+						}
+						double colorX = fieldX + 128;
+						if( colorX < 0 ){ colorX = 0; }
+						if( colorX > 255 ){colorX = 255;}
+						double colorY = fieldY + 128;
+						if( colorY < 0 ){ colorY = 0; }
+						if( colorY > 255 ){colorY = 255;}
 						color.r = 0;
-						color.g = abs((int)(yPull)%255);
-						color.b = abs((int)(xPull)%255);
+						color.g = (int)colorX;
+						color.b = (int)colorY;
 						set( screenX, screenY, color );
 					}
 				}
 			}
 		}
 	}
-	/*if( (frameCount % 30) == 0 ){
-		printf("xPull: %f\n", xPull);
-	}*/
-	button1.draw(mouseX, mouseY, mousePressed, windowWidth);
-	button2.draw(mouseX, mouseY, mousePressed, windowWidth);
-	if( button1.released ){
-		systemNum ++;
-		if( systemNum > 2 ){ systemNum = 0; }
+
+	for( auto i = particles.begin(); i!=particles.end(); ++i ){
+		if( (*i).properties & 0b10000000 ){
+			fieldX = 0; fieldY = 0;
+			for( auto iSub = particles.begin(); iSub!=particles.end(); ++iSub ){
+				if( (*iSub).id != (*i).id  &&  (*iSub).properties & 0b01000000 ){
+					intermediate = (-1 * (*iSub).charge) / cube( dist2D((*i).x, (*i).y, (*iSub).x, (*iSub).y) );
+					fieldX += intermediate * ( (*iSub).x - (*i).x );
+					fieldY += intermediate * ( (*iSub).y - (*i).y );
+				}
+			}
+			(*i).velX += (*i).charge * fieldX / 100000;
+			(*i).velY += (*i).charge * fieldY / 100000;
+			(*i).x += (*i).velX;
+			(*i).y += (*i).velY;
+		}
 	}
-	if( button2.pressed ){
+
+	//button1.draw( mouseX, mouseY, mousePressed, windowWidth );
+	//button2.draw( mouseX, mouseY, mousePressed, windowWidth );
+	if( button2.isPressed ){
 		displayMode = 2;
-		colorMode = 2;
+		colorMode = 0;
 	}
 	else{
-		displayMode = 0;
-		colorMode = 0;
+		displayMode = 1;
+		colorMode = 2;
 	}
 
 }
@@ -163,7 +179,7 @@ int main(){
 		else{ shortDim = windowHeight; }
 		pixels = new Uint32[ windowWidth * windowHeight ];
 
-		window = SDL_CreateWindow( "Charge Graphs", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, windowWidth, windowHeight, SDL_WINDOW_RESIZABLE );//used to end with "SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI" instead of "0".  For resizable, should be SDL_WINDOW_RESIZABLE.
+		window = SDL_CreateWindow( "Charge Graphs", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, windowWidth, windowHeight, 0 );//used to end with "SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI" instead of "0".  For resizable, should be SDL_WINDOW_RESIZABLE.
 		if( window == NULL ){
 			printf( "Window could not be created! SDL_Error: %s\n", SDL_GetError() );
 
@@ -288,12 +304,15 @@ Color hueRGB(uint8_t hue){
 }
 
 void addParticle( double setCharge, double setParticleX, double setParticleY, double setParticleVelX, double setParticleVelY, char setProperties ){
-	particleCharge.push_back( setCharge );
-	particleX.push_back( setParticleX );
-	particleY.push_back( setParticleY );
-	particleVelX.push_back( setParticleVelX );
-	particleVelY.push_back( setParticleVelY );
-	particleProperties.push_back( setProperties );
+	Particle particle;
+	particle.charge = setCharge;
+	particle.x = setParticleX;// * windowWidth / shortDim;
+	particle.y = setParticleY;// * windowHeight / shortDim;
+	particle.velX = setParticleVelX;
+	particle.velY = setParticleVelY;
+	particle.properties = setProperties;
+	particle.id = particles.size();
+	particles.push_back( particle );
 }
 
 void set( unsigned int x, unsigned int y, Color color ){
