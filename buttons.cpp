@@ -7,20 +7,24 @@ ToggleButton::ToggleButton(){
 	y = 0;
 	width = 0;
 	height = 0;
-	pixels = nullptr;
 }
-ToggleButton::ToggleButton( unsigned int setX, unsigned int setY, unsigned int setWidth, unsigned int setHeight, Uint32*& setPixels ){
+ToggleButton::ToggleButton( unsigned int setX, unsigned int setY, unsigned int setWidth, unsigned int setHeight ){
 	x = setX;
 	y = setY;
 	width = setWidth;
 	height = setHeight;
-	pixels = setPixels;
 }
 
-void ToggleButton::draw( unsigned int mouseX, unsigned int mouseY, bool mousePressed, unsigned int windowWidth ){
+void ToggleButton::draw( Uint32*& pixels, unsigned int windowWidth, unsigned int mouseX, unsigned int mouseY, bool mousePressed ){
 	if( mouseX >= x && mouseX <= x+width  &&  mouseY >= y && mouseY <= y+height ){
 		if( mousePressed ){
-			held = true;
+			if( held ){
+				justPressed = false;
+			}
+			else{
+				held = true;
+				justPressed = true;
+			}
 			usedColor = pressedColor;
 		}
 		else{
@@ -63,17 +67,15 @@ PushButton::PushButton(){
 	y = 0;
 	width = 0;
 	height = 0;
-	pixels = nullptr;
 }
-PushButton::PushButton( unsigned int setX, unsigned int setY, unsigned int setWidth, unsigned int setHeight, Uint32*& setPixels ){
+PushButton::PushButton( unsigned int setX, unsigned int setY, unsigned int setWidth, unsigned int setHeight ){
 	x = setX;
 	y = setY;
 	width = setWidth;
 	height = setHeight;
-	pixels = setPixels;
 }
 
-void PushButton::draw( unsigned int mouseX, unsigned int mouseY, bool mousePressed, unsigned int windowWidth ){
+void PushButton::draw( Uint32*& pixels, unsigned int windowWidth, unsigned int mouseX, unsigned int mouseY, bool mousePressed ){
 	if( mouseX >= x && mouseX <= x+width  &&  mouseY >= y && mouseY <= y+height ){
 		released = false;
 		if( mousePressed ){
