@@ -15,7 +15,7 @@ public:
 	Uint32 usedColor;
 	ToggleButton();
 	ToggleButton( unsigned int setX, unsigned int setY, unsigned int setWidth, unsigned int setHeight );
-	void draw( Uint32*& pixels, unsigned int windowWidth, unsigned int mouseX, unsigned int mouseY, bool mousePressed );
+	void draw( Uint32*& pixels, unsigned int windowWidth, unsigned int mouseX, unsigned int mouseY, bool mousePressed, bool active );
 };
 
 class PushButton{
@@ -32,7 +32,7 @@ public:
 	Uint32 usedColor;
 	PushButton();
 	PushButton( unsigned int setX, unsigned int setY, unsigned int setWidth, unsigned int setHeight );
-	void draw( Uint32*& pixels, unsigned int windowWidth, unsigned int mouseX, unsigned int mouseY, bool mousePressed );
+	void draw( Uint32*& pixels, unsigned int windowWidth, unsigned int mouseX, unsigned int mouseY, bool mousePressed, bool active );
 };
 
 

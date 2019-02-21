@@ -8,6 +8,7 @@
 
 
 void set( unsigned int x, unsigned int y, Color color );
+void circle( double posX, double posY, double radius, double borderWidth, Uint32 fill, Uint32 border );
 inline double square( double num ){return num * num;}
 /*inline double cube( double num ){return num * num * num;}
 inline double dist2DSq( double x1, double y1, double x2, double y2 ){
@@ -22,6 +23,8 @@ unsigned int windowHeight;//420
 unsigned int shortDim;
 Uint32* pixels;
 unsigned int frameCount = 0;
+Uint32 lastTime;
+Uint32 frameRate;
 
 unsigned int mouseX = windowWidth/2;
 unsigned int mouseY = windowHeight/2;
@@ -36,24 +39,32 @@ ParticleSystem partSys;
 
 bool moving;
 bool selected;
+bool deSelect = false;
 double offsetX, offsetY;
 
 
 ToggleButton button1;//Changes positive/negative charges placed on click
-ToggleButton button2;//Toggles 2D/3D
+ToggleButton pause;
+PushButton button2;
+ToggleButton chargeButton;//Toggles 2D/3D
 
 void setup(){
-	button1 = ToggleButton(windowWidth - 60, 10, 50, 30);
-	button2 = ToggleButton(10, 10, 50, 30);
-	button2.offColor = 0xff00ff00;
-	button2.onColor = 0xffff0000;
-	button2.pressedColor = 0xff888800;
+	button1 = ToggleButton(windowWidth - 60, windowHeight - 40, 50, 30);
+	pause = ToggleButton( windowWidth/2 - 25, 10, 50, 30 );
+	pause.offColor = 0xffffffff;
+	pause.onColor = 0xffffffff;
+	pause.pressedColor = 0xffcccccc;
+	button2 = PushButton(10, windowHeight - 40, 50, 30 );
+	chargeButton = ToggleButton(10, 10, 50, 30);
+	chargeButton.offColor = 0xff00ff00;
+	chargeButton.onColor = 0xffff0000;
+	chargeButton.pressedColor = 0xff888800;
 
-	partSys.addParticle( 1, 0.25, 0.25, 0, 0, 0b01000000 );
-	partSys.addParticle( 1, 0.75, 0.25, 0, 0, 0b01000000 );
-	partSys.addParticle( 1, 0.25, 0.75, 0, 0, 0b01000000 );
-	partSys.addParticle( 1, 0.75, 0.75, 0, 0, 0b01000000 );
-	partSys.addParticle( -1, 0.5, 0.5, 0, 0, 0b11000000 );
+	partSys.addParticle( 1, 0.25 * windowWidth / shortDim, 0.25 * windowHeight / shortDim, 0, 0, 0b01000000 );
+	partSys.addParticle( 1, 0.75 * windowWidth / shortDim, 0.25 * windowHeight / shortDim, 0, 0, 0b01000000 );
+	partSys.addParticle( 1, 0.25 * windowWidth / shortDim, 0.75 * windowHeight / shortDim, 0, 0, 0b01000000 );
+	partSys.addParticle( 1, 0.75 * windowWidth / shortDim, 0.75 * windowHeight / shortDim, 0, 0, 0b01000000 );
+	partSys.addParticle( 2, 0.4 * windowWidth / shortDim, 0.5 * windowHeight / shortDim, 0, 0, 0b11000000 );
 }
 
 
@@ -70,31 +81,32 @@ void loop(){
 			partSys.particles.back().y = sclMouseY + offsetY;
 		}
 	}
-	else{
+	if( !pause.isPressed ){
 		partSys.simulate();
 	}
 
 	partSys.draw(pixels, windowWidth, windowHeight, displayMode, colorMode);
 
-	button1.draw( pixels, windowWidth, mouseX, mouseY, mouseIsPressed );
-	if( button1.isPressed ){
-		displayMode = 0;
-		int toDelete = 0;
-		for( auto i = partSys.particles.begin(); i != partSys.particles.end(); ++i ){
-			if( (*i).x < 0 || (*i).x > (windowWidth*1.0 / shortDim)  ||  (*i).y < 0 || (*i).y > (windowHeight*1.0 / shortDim) ){
-				//partSys.particles.erase( partSys.particles.begin() );
-			}
-			toDelete ++;
-		}
-	}
-	else{
-		displayMode = 1;
-		colorMode = 2;
-	}
 	if( displayMode == 0 ){
-		button2.draw( pixels, windowWidth, mouseX, mouseY, mouseIsPressed );
+		for( unsigned int setX = windowWidth - shortDim*4/50 - 11; setX < windowWidth - 10; setX ++ ){
+			pixels[ ( windowWidth * 10 ) + setX ] = 0xff000000;
+			pixels[ ( windowWidth * 11 ) + setX ] = 0xff000000;
+			pixels[ ( windowWidth * (9 + shortDim*7/50) ) + setX ] = 0xff000000;
+			pixels[ ( windowWidth * (10 + shortDim*7/50) ) + setX ] = 0xff000000;
+		}
+		for( unsigned int setY = 11; setY < shortDim*7/50 + 11; setY ++ ){
+			pixels[ ( windowWidth * setY ) + windowWidth - shortDim*2/25 - 11 ] = 0xff000000;
+			pixels[ ( windowWidth * setY ) + windowWidth - shortDim*2/25 - 10 ] = 0xff000000;
+			pixels[ ( windowWidth * setY ) + windowWidth - 11 ] = 0xff000000;
+			pixels[ ( windowWidth * setY ) + windowWidth - 12 ] = 0xff000000;
+		}
+		circle( windowWidth - shortDim/25.0 - 11, shortDim/25.0 + 10, shortDim/50.0, shortDim/100, 0xff00ff00, 0xff004400);
+		circle( windowWidth - shortDim/25.0 - 11, shortDim/10.0 + 10, shortDim/50.0, shortDim/100, 0xffff0000, 0xff440000);
+
 		if( selected ){
-			if( button2.isPressed ){
+			chargeButton.draw( pixels, windowWidth, mouseX, mouseY, mouseIsPressed, !moving );
+			if( chargeButton.justPressed ){ deSelect = false; }
+			if( chargeButton.isPressed ){
 				partSys.particles.back().charge = -1 * abs(partSys.particles.back().charge);
 			}
 			else{
@@ -103,34 +115,117 @@ void loop(){
 		}
 	}
 
-}
-
-void mousePressed(){
-	if( displayMode == 0 ){
-		if( !moving ){
-			for( auto i = partSys.particles.begin(); i != partSys.particles.end(); ++i ){
-				if(  square( sclMouseX - (*i).x ) + square( sclMouseY - (*i).y ) < square( (*i).charge / 50 )  ){
-					printf("ran");
-					moving = true;
-					selected = true;
-					offsetX = (*i).x - sclMouseX;
-					offsetY = (*i).y - sclMouseY;
-					button2.isPressed = ( (*i).charge < 0 );
-					Particle swap = partSys.particles.back();
-					partSys.particles.back() = *i;
-					*i = swap;
-					break;
+	button1.draw( pixels, windowWidth, mouseX, mouseY, mouseIsPressed, !moving );
+	pause.draw( pixels, windowWidth, mouseX, mouseY, mouseIsPressed, !moving );
+	if( pause.isPressed ){
+		for( unsigned int y = 15; y < 35; y ++ ){
+			for( unsigned int x = windowWidth/2 - 10; x < windowWidth/2 + 10; x ++ ){
+				if( (unsigned int)abs( (int)y - 25 ) < 10 - (x - windowWidth/2 + 10)/2 ){
+					pixels[ (y * windowWidth) + x ] = 0xff000000;
 				}
 			}
 		}
 	}
 	else{
-		selected = false;
+		for( int num = 0; num < 2; num ++ ){
+			for( unsigned int y = 15; y < 35; y ++ ){
+				for( unsigned int x = windowWidth/2 - 10; x < windowWidth/2 - 3; x ++ ){
+					pixels[ (y * windowWidth) + x ] = 0xff000000;
+				}
+				for( unsigned int x = windowWidth/2 +3; x < windowWidth/2 + 10; x ++ ){
+					pixels[ (y * windowWidth) + x ] = 0xff000000;
+				}
+			}
+		}
+	}
+	button2.draw( pixels, windowWidth, mouseX, mouseY, mouseIsPressed, !moving );
+	if( button1.isPressed ){
+		displayMode = 0;
+		if( !moving ){
+			for( auto i = partSys.particles.begin(); i != partSys.particles.end(); ++i ){
+				if( (*i).x < 0 || (*i).x > (windowWidth*1.0 / shortDim)  ||  (*i).y < 0 || (*i).y > (windowHeight*1.0 / shortDim) ){
+					if( (*i).properties & 0b00010000 ){
+						selected = false;
+						moving = false;
+					}
+					partSys.particles.erase( i );
+					--i;
+				}
+			}
+		}
+	}
+	else{
+		displayMode = 1;
+		colorMode = 2;
+	}
+
+	if( displayMode == 0 ){
+		partSys.drawDots(pixels, windowWidth, windowHeight);
+	}
+}
+
+void mousePressed(){
+	if( displayMode == 0 && !moving/*sanity check (unnecessary?)*/ ){
+		deSelect = true;
+		for( auto i = partSys.particles.begin(); i != partSys.particles.end(); ++i ){
+			if(  square( sclMouseX - (*i).x ) + square( sclMouseY - (*i).y ) < square( (*i).charge / 50 )  ){
+				moving = true;
+				selected = true;
+				deSelect = false;
+				partSys.particles.back().properties &= 0b11100111;
+				(*i).properties |= 0b00011000;
+				offsetX = (*i).x - sclMouseX;
+				offsetY = (*i).y - sclMouseY;
+				chargeButton.isPressed = ( (*i).charge < 0 );
+				Particle swap = partSys.particles.back();
+				partSys.particles.back() = *i;
+				*i = swap;
+				break;
+			}
+		}
+		if( !moving  &&  mouseX >= windowWidth - shortDim*3/50 - 11  &&  mouseX <= windowWidth - shortDim/50 - 11  &&
+		                 mouseY >= shortDim/50 + 10  &&  mouseY <= shortDim*3/25 +10 ){
+			deSelect = false;
+			if( mouseY <= shortDim*3/50 + 10 ){
+				if(  square( mouseX - windowWidth + shortDim/25 + 11 ) + square( mouseY - shortDim/25 - 10 ) < square( shortDim / 50 ) || true  ){
+					partSys.particles.back().properties &= 0b11100111;
+					partSys.addParticle( 1, windowWidth/2, windowHeight, 0, 0, 0b11011000 );
+					chargeButton.isPressed = false;
+					moving = true;
+					selected = true;
+					offsetX = (-(double)mouseX - shortDim/25.0 + windowWidth - 11) / shortDim;
+					offsetY = (-(double)mouseY + shortDim/25.0 + 10) / shortDim;
+				}
+			}
+			else if( mouseY >= shortDim*2/25 + 10){//  &&
+			        //square( mouseX - windowWidth + shortDim/25 + 11 ) + square( mouseY - shortDim/10 - 10 ) < square( shortDim / 50 ) ){
+				partSys.particles.back().properties &= 0b11100111;
+				partSys.addParticle( -1, windowWidth/2, windowHeight, 0, 0, 0b11011000 );
+				chargeButton.isPressed = true;
+				moving = true;
+				selected = true;
+				offsetX = (-(double)mouseX - shortDim/25.0 + windowWidth - 11) / shortDim;
+				offsetY = (-(double)mouseY + shortDim/25.0 + 10) / shortDim;
+			}
+		}
 	}
 }
 
 void mouseReleased(){
 	moving = false;
+	partSys.particles.back().properties &= 0b11110111;
+	if( deSelect ){
+		deSelect = false;
+		selected = false;
+		partSys.particles.back().properties &= 0b11101111;
+	}
+}
+
+void windowResized(){
+	button1.x = windowWidth - 60;
+	button1.y = windowHeight - 40;
+	pause.x = windowWidth/2 - 25;
+	button2.y = windowHeight - 40;
 }
 
 
@@ -146,13 +241,14 @@ int main(){
 	}
 	else{
 		SDL_GetCurrentDisplayMode( 0, &DM );
-		windowWidth = DM.w*3/4;
-		windowHeight = DM.h*3/4;
+		windowWidth = 250;//DM.w*3/4;
+		windowHeight = 250;//DM.h*3/4;
 		if( windowWidth <= windowHeight){ shortDim = windowWidth; }
 		else{ shortDim = windowHeight; }
 		pixels = new Uint32[ windowWidth * windowHeight ];
 
-		window = SDL_CreateWindow( "Charge Graphs", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, windowWidth, windowHeight, SDL_WINDOW_RESIZABLE );//used to end with "SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI" instead of "0".  For resizable, should be SDL_WINDOW_RESIZABLE.
+		window = SDL_CreateWindow( "Charge Graphs", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, windowWidth, windowHeight, SDL_WINDOW_RESIZABLE );
+		//last parameter above once ended with "SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI" instead of current value.  For resizable, should be SDL_WINDOW_RESIZABLE.
 		if( window == NULL ){
 			printf( "Window could not be created! SDL_Error: %s\n", SDL_GetError() );
 
@@ -163,6 +259,13 @@ int main(){
 			//SDL_SetWindowFullscreen(window,  SDL_WINDOW_FULLSCREEN_DESKTOP);
 			setup();
 			while(!quit){
+				if( SDL_GetTicks() != lastTime  ){
+				frameRate = 1000 / ( SDL_GetTicks() - lastTime );
+				}
+				lastTime = SDL_GetTicks();
+				if( button2.held ){
+					printf("Frame Rate:%i\n", frameRate);
+				}
 				loop();
 				SDL_UpdateTexture( buffer, NULL, pixels, windowWidth*sizeof(Uint32) );
 				SDL_RenderClear( renderer );
@@ -198,6 +301,7 @@ int main(){
 							pixels = new Uint32[ windowWidth * windowHeight ];
 							SDL_DestroyTexture( buffer );
 							buffer = SDL_CreateTexture( renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, windowWidth, windowHeight );
+							windowResized();
 						}
 					}
 				}
@@ -209,6 +313,19 @@ int main(){
 	SDL_DestroyWindow( window );
 	SDL_Quit();
 	return 0;
+}
+
+void circle( double posX, double posY, double radius, double borderWidth, Uint32 fill, Uint32 border ){
+	Uint32 color;
+	for( int x = -(int)radius; x <= (int)radius; x ++ ){
+		for( int y = -(int)radius; y <= (int)radius; y ++ ){
+			if( x+posX >= 0 && x+posX < windowWidth  &&  y+posY >= 0 && y+posY < windowHeight   &&   x*x + y*y < radius*radius ){
+				if( x*x + y*y < square( radius - borderWidth ) ){ color = fill; }
+				else{ color = border; }
+				pixels[ ( (int)floor(y+posY) * windowWidth) + (int)floor(x+posX) ] = color;
+			}
+		}
+	}
 }
 
 

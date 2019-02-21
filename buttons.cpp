@@ -15,8 +15,8 @@ ToggleButton::ToggleButton( unsigned int setX, unsigned int setY, unsigned int s
 	height = setHeight;
 }
 
-void ToggleButton::draw( Uint32*& pixels, unsigned int windowWidth, unsigned int mouseX, unsigned int mouseY, bool mousePressed ){
-	if( mouseX >= x && mouseX <= x+width  &&  mouseY >= y && mouseY <= y+height ){
+void ToggleButton::draw( Uint32*& pixels, unsigned int windowWidth, unsigned int mouseX, unsigned int mouseY, bool mousePressed, bool active ){
+	if( active   &&   mouseX >= x && mouseX <= x+width  &&  mouseY >= y && mouseY <= y+height ){
 		if( mousePressed ){
 			if( held ){
 				justPressed = false;
@@ -75,8 +75,8 @@ PushButton::PushButton( unsigned int setX, unsigned int setY, unsigned int setWi
 	height = setHeight;
 }
 
-void PushButton::draw( Uint32*& pixels, unsigned int windowWidth, unsigned int mouseX, unsigned int mouseY, bool mousePressed ){
-	if( mouseX >= x && mouseX <= x+width  &&  mouseY >= y && mouseY <= y+height ){
+void PushButton::draw( Uint32*& pixels, unsigned int windowWidth, unsigned int mouseX, unsigned int mouseY, bool mousePressed, bool active ){
+	if( active   &&   mouseX >= x && mouseX <= x+width  &&  mouseY >= y && mouseY <= y+height ){
 		released = false;
 		if( mousePressed ){
 			if( held ){ pressed = false; }
@@ -88,6 +88,8 @@ void PushButton::draw( Uint32*& pixels, unsigned int windowWidth, unsigned int m
 		}
 		else{
 			if( held ){
+				held = false;
+				pressed = false;
 				released = true;
 			}
 			usedColor = hoverColor;
@@ -96,20 +98,17 @@ void PushButton::draw( Uint32*& pixels, unsigned int windowWidth, unsigned int m
 	else{
 		usedColor = offColor;
 	}
-	if( held && !mousePressed ){
-		held = false;
-	}
 	for( unsigned int setX = x; setX < x + width; setX ++ ){
-		pixels[ setX ] = borderColor;
-		pixels[ windowWidth + setX ] = borderColor;
-		pixels[ ( windowWidth * (height - 1) ) + setX ] = borderColor;
-		pixels[ ( windowWidth * (height - 2) ) + setX ] = borderColor;
+		pixels[ ( windowWidth * y ) + setX ] = borderColor;
+		pixels[ ( windowWidth * (y + 1) ) + setX ] = borderColor;
+		pixels[ ( windowWidth * (y + height - 1) ) + setX ] = borderColor;
+		pixels[ ( windowWidth * (y + height - 2) ) + setX ] = borderColor;
 	}
 	for( unsigned int setY = y + 2; setY < y + height - 2; setY ++ ){
-		pixels[ ( windowWidth * setY ) ] = borderColor;
-		pixels[ ( windowWidth * setY ) + 1 ] = borderColor;
-		pixels[ ( windowWidth * setY ) + width-1 ] = borderColor;
-		pixels[ ( windowWidth * setY ) + width-2 ] = borderColor;
+		pixels[ ( windowWidth * setY ) + x ] = borderColor;
+		pixels[ ( windowWidth * setY ) + x + 1 ] = borderColor;
+		pixels[ ( windowWidth * setY ) + x + width - 1 ] = borderColor;
+		pixels[ ( windowWidth * setY ) + x + width - 2 ] = borderColor;
 	}
 	for( unsigned int setY = y + 2; setY < y + height - 2; setY ++ ){
 		for( unsigned int setX = x + 2; setX < x + width - 2; setX ++ ){
