@@ -49,13 +49,13 @@ PushButton button2;
 ToggleButton chargeButton;//Toggles 2D/3D
 
 void setup(){
-	button1 = ToggleButton(windowWidth - 60, windowHeight - 40, 50, 30);
-	pause = ToggleButton( windowWidth/2 - 25, 10, 50, 30 );
+	button1 = ToggleButton( windowWidth*34/40, windowHeight*137/150, windowWidth/8, windowHeight/15 );
+	pause = ToggleButton( windowWidth*9/20, windowHeight/50, windowWidth/10, windowHeight/15 );
 	pause.offColor = 0xffffffff;
 	pause.onColor = 0xffffffff;
 	pause.pressedColor = 0xffcccccc;
-	button2 = PushButton(10, windowHeight - 40, 50, 30 );
-	chargeButton = ToggleButton(10, 10, 50, 30);
+	button2 = PushButton( windowWidth/40, windowHeight*137/150, windowWidth/8, windowHeight/15 );
+	chargeButton = ToggleButton( windowWidth/40, windowHeight/50, windowWidth/8, windowHeight/15 );
 	chargeButton.offColor = 0xff00ff00;
 	chargeButton.onColor = 0xffff0000;
 	chargeButton.pressedColor = 0xff888800;
@@ -102,25 +102,14 @@ void loop(){
 		}
 		circle( windowWidth - shortDim/25.0 - 11, shortDim/25.0 + 10, shortDim/50.0, shortDim/100, 0xff00ff00, 0xff004400);
 		circle( windowWidth - shortDim/25.0 - 11, shortDim/10.0 + 10, shortDim/50.0, shortDim/100, 0xffff0000, 0xff440000);
-
-		if( selected ){
-			chargeButton.draw( pixels, windowWidth, mouseX, mouseY, mouseIsPressed, !moving );
-			if( chargeButton.justPressed ){ deSelect = false; }
-			if( chargeButton.isPressed ){
-				partSys.particles.back().charge = -1 * abs(partSys.particles.back().charge);
-			}
-			else{
-				partSys.particles.back().charge = abs(partSys.particles.back().charge);
-			}
-		}
 	}
 
 	button1.draw( pixels, windowWidth, mouseX, mouseY, mouseIsPressed, !moving );
 	pause.draw( pixels, windowWidth, mouseX, mouseY, mouseIsPressed, !moving );
-	if( pause.isPressed ){
-		for( unsigned int y = 15; y < 35; y ++ ){
-			for( unsigned int x = windowWidth/2 - 10; x < windowWidth/2 + 10; x ++ ){
-				if( (unsigned int)abs( (int)y - 25 ) < 10 - (x - windowWidth/2 + 10)/2 ){
+	if( pause.isPressed ){//pause = ToggleButton( windowWidth*9/20, windowHeight/50, windowWidth/10, windowHeight/15 );
+		for( unsigned int y = windowHeight*3/100; y < windowHeight*23/300; y ++ ){
+			for( unsigned int x = windowHeight*47/100; x < windowHeight*53/100; x ++ ){
+				if( (unsigned int)abs( (int)y - 25 ) < 10 - (x - windowWidth/2 + 10)/2 ){//This if statement can be removed if the ending of one of the x for loop was determined by y.
 					pixels[ (y * windowWidth) + x ] = 0xff000000;
 				}
 			}
@@ -138,6 +127,16 @@ void loop(){
 			}
 		}
 	}
+	if( selected ){
+			chargeButton.draw( pixels, windowWidth, mouseX, mouseY, mouseIsPressed, !moving );
+			if( chargeButton.justPressed || pause.justPressed ){ deSelect = false; }
+			if( chargeButton.isPressed ){
+				partSys.particles.back().charge = -1 * abs(partSys.particles.back().charge);
+			}
+			else{
+				partSys.particles.back().charge = abs(partSys.particles.back().charge);
+			}
+		}
 	button2.draw( pixels, windowWidth, mouseX, mouseY, mouseIsPressed, !moving );
 	if( button1.isPressed ){
 		displayMode = 0;
@@ -222,10 +221,10 @@ void mouseReleased(){
 }
 
 void windowResized(){
-	button1.x = windowWidth - 60;
-	button1.y = windowHeight - 40;
-	pause.x = windowWidth/2 - 25;
-	button2.y = windowHeight - 40;
+	button1.moveResize( windowWidth*34/40, windowHeight*137/150, windowWidth/8, windowHeight/15 );
+	pause.moveResize( windowWidth*9/20, windowHeight/50, windowWidth/10, windowHeight/15 );
+	button2.moveResize( windowWidth/40, windowHeight*137/150, windowWidth/8, windowHeight/15 );
+	chargeButton.moveResize( windowWidth/40, windowHeight/50, windowWidth/8, windowHeight/15 );
 }
 
 
@@ -241,8 +240,8 @@ int main(){
 	}
 	else{
 		SDL_GetCurrentDisplayMode( 0, &DM );
-		windowWidth = 250;//DM.w*3/4;
-		windowHeight = 250;//DM.h*3/4;
+		windowWidth = DM.h*3/4;
+		windowHeight = DM.h*3/4;
 		if( windowWidth <= windowHeight){ shortDim = windowWidth; }
 		else{ shortDim = windowHeight; }
 		pixels = new Uint32[ windowWidth * windowHeight ];
@@ -260,7 +259,7 @@ int main(){
 			setup();
 			while(!quit){
 				if( SDL_GetTicks() != lastTime  ){
-				frameRate = 1000 / ( SDL_GetTicks() - lastTime );
+					frameRate = 1000 / ( SDL_GetTicks() - lastTime );
 				}
 				lastTime = SDL_GetTicks();
 				if( button2.held ){

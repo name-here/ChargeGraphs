@@ -2,6 +2,14 @@
 #include "buttons.h"
 
 
+void Button::moveResize( unsigned int setX, unsigned int setY, unsigned int setWidth, unsigned int setHeight ){
+	x = setX;
+	y = setY;
+	width = setWidth;
+	height = setHeight;
+}
+
+
 ToggleButton::ToggleButton(){
 	x = 0;
 	y = 0;
