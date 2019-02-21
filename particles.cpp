@@ -66,7 +66,6 @@ void ParticleSystem::draw( Uint32*& pixels, unsigned int windowWidth, unsigned i
 							if( setY < windowHeight  &&  setY > 0  &&  pixels[ (setY * windowWidth) + setX ] == 0x7f7f7f7f ){
 								color = getColor( potential, colorMode );
 								pixels[ (setY * windowWidth) + setX ]  =  ( 255 << 24 ) + ( color.r << 16 )  + ( color.g << 8 )  +  color.b;
-								//set( pixels, windowWidth, windowHeight, setX, setY, getColor( potential, colorMode ) );
 							}
 						}
 						else if( displayMode == 2 ){

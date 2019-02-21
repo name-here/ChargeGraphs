@@ -108,47 +108,46 @@ void loop(){
 	pause.draw( pixels, windowWidth, mouseX, mouseY, mouseIsPressed, !moving );
 	if( pause.isPressed ){//pause = ToggleButton( windowWidth*9/20, windowHeight/50, windowWidth/10, windowHeight/15 );
 		for( unsigned int y = windowHeight*3/100; y < windowHeight*23/300; y ++ ){
-			for( unsigned int x = windowHeight*47/100; x < windowHeight*53/100; x ++ ){
-				if( (unsigned int)abs( (int)y - 25 ) < 10 - (x - windowWidth/2 + 10)/2 ){//This if statement can be removed if the ending of one of the x for loop was determined by y.
+			for( unsigned int x = windowWidth/2 - windowHeight*3/100; x < windowWidth/2 + windowHeight*3/100 - abs((int)y - (int)windowHeight*16/300)*18/7; x ++ ){
+
 					pixels[ (y * windowWidth) + x ] = 0xff000000;
-				}
 			}
 		}
 	}
 	else{
-		for( int num = 0; num < 2; num ++ ){
-			for( unsigned int y = 15; y < 35; y ++ ){
-				for( unsigned int x = windowWidth/2 - 10; x < windowWidth/2 - 3; x ++ ){
-					pixels[ (y * windowWidth) + x ] = 0xff000000;
-				}
-				for( unsigned int x = windowWidth/2 +3; x < windowWidth/2 + 10; x ++ ){
-					pixels[ (y * windowWidth) + x ] = 0xff000000;
-				}
+		for( unsigned int y = windowHeight*3/100; y < windowHeight*23/300; y ++ ){
+			for( unsigned int x = windowWidth/2 - windowHeight*5/200; x < windowWidth/2 - windowHeight/100; x ++ ){
+				pixels[ (y * windowWidth) + x ] = 0xff000000;
+			}
+			for( unsigned int x = windowWidth/2 + windowHeight/100; x < windowWidth/2 + windowHeight*5/200; x ++ ){
+				pixels[ (y * windowWidth) + x ] = 0xff000000;
 			}
 		}
 	}
 	if( selected ){
-			chargeButton.draw( pixels, windowWidth, mouseX, mouseY, mouseIsPressed, !moving );
-			if( chargeButton.justPressed || pause.justPressed ){ deSelect = false; }
-			if( chargeButton.isPressed ){
-				partSys.particles.back().charge = -1 * abs(partSys.particles.back().charge);
-			}
-			else{
-				partSys.particles.back().charge = abs(partSys.particles.back().charge);
-			}
+		chargeButton.draw( pixels, windowWidth, mouseX, mouseY, mouseIsPressed, !moving );
+		if( chargeButton.justPressed || pause.justPressed ){ deSelect = false; }
+		if( chargeButton.isPressed ){
+			partSys.particles.back().charge = -1 * abs(partSys.particles.back().charge);
 		}
+		else{
+			partSys.particles.back().charge = abs(partSys.particles.back().charge);
+		}
+	}
 	button2.draw( pixels, windowWidth, mouseX, mouseY, mouseIsPressed, !moving );
 	if( button1.isPressed ){
 		displayMode = 0;
 		if( !moving ){
-			for( auto i = partSys.particles.begin(); i != partSys.particles.end(); ++i ){
+			for( auto i = partSys.particles.begin(); i != partSys.particles.end(); ){
 				if( (*i).x < 0 || (*i).x > (windowWidth*1.0 / shortDim)  ||  (*i).y < 0 || (*i).y > (windowHeight*1.0 / shortDim) ){
 					if( (*i).properties & 0b00010000 ){
 						selected = false;
 						moving = false;
 					}
-					partSys.particles.erase( i );
-					--i;
+					i = partSys.particles.erase( i );
+				}
+				else{
+					++i;
 				}
 			}
 		}
@@ -186,7 +185,7 @@ void mousePressed(){
 		                 mouseY >= shortDim/50 + 10  &&  mouseY <= shortDim*3/25 +10 ){
 			deSelect = false;
 			if( mouseY <= shortDim*3/50 + 10 ){
-				if(  square( mouseX - windowWidth + shortDim/25 + 11 ) + square( mouseY - shortDim/25 - 10 ) < square( shortDim / 50 ) || true  ){
+				if(  square( (double)mouseX - windowWidth + shortDim/25 + 11 ) + square( (double)mouseY - shortDim/25 - 10 ) < square( shortDim / 50 ) ){
 					partSys.particles.back().properties &= 0b11100111;
 					partSys.addParticle( 1, windowWidth/2, windowHeight, 0, 0, 0b11011000 );
 					chargeButton.isPressed = false;
@@ -196,15 +195,15 @@ void mousePressed(){
 					offsetY = (-(double)mouseY + shortDim/25.0 + 10) / shortDim;
 				}
 			}
-			else if( mouseY >= shortDim*2/25 + 10){//  &&
-			        //square( mouseX - windowWidth + shortDim/25 + 11 ) + square( mouseY - shortDim/10 - 10 ) < square( shortDim / 50 ) ){
+			else if( mouseY >= shortDim*2/25 + 10  &&
+			        square( (double)mouseX - windowWidth + shortDim/25 + 11 ) + square( (double)mouseY - shortDim/10 - 10 ) < square( shortDim / 50 ) ){
 				partSys.particles.back().properties &= 0b11100111;
 				partSys.addParticle( -1, windowWidth/2, windowHeight, 0, 0, 0b11011000 );
 				chargeButton.isPressed = true;
 				moving = true;
 				selected = true;
 				offsetX = (-(double)mouseX - shortDim/25.0 + windowWidth - 11) / shortDim;
-				offsetY = (-(double)mouseY + shortDim/25.0 + 10) / shortDim;
+				offsetY = (-(double)mouseY + shortDim/10.0 + 10) / shortDim;
 			}
 		}
 	}
@@ -240,7 +239,7 @@ int main(){
 	}
 	else{
 		SDL_GetCurrentDisplayMode( 0, &DM );
-		windowWidth = DM.h*3/4;
+		windowWidth = DM.w*3/4;
 		windowHeight = DM.h*3/4;
 		if( windowWidth <= windowHeight){ shortDim = windowWidth; }
 		else{ shortDim = windowHeight; }
