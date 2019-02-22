@@ -62,9 +62,9 @@ void setup(){
 	button1 = ToggleButton( windowWidth*34/40, windowHeight*137/150, windowWidth/8, windowHeight/15 );
 	pauseButton = ToggleButton( windowWidth*9/20, windowHeight/50, windowWidth/10, windowHeight/15, 0xffffffff, 0xffffffff, 0xffcccccc, 0xff000000 );
 	resetButton = PushButton( windowWidth/40, windowHeight*137/150, windowWidth/8, windowHeight/15, 0xff990000, 0xffff0000, 0xff000000, 0xff000000 );
-	chargeButton = ToggleButton( windowWidth/40, windowHeight/50, windowWidth/8, windowHeight/15, 0xffff0000, 0xff00ff00, 0xff888800, 0xff000000 );
-	feelsForce = ToggleButton( windowWidth/40, windowHeight*16/150, shortDim/15, shortDim/15, 0xff555555, 0xffffffff, 0xffaaaaaa, 0xff000000 );
-	exertsForce = ToggleButton( windowWidth/40, windowHeight*29/150, shortDim/15, shortDim/15, 0xff555555, 0xffffffff, 0xffaaaaaa, 0xff000000 );
+	chargeButton = ToggleButton( windowWidth*5/80 + shortDim/15, windowHeight/50, windowWidth*3/32, windowHeight/15, 0xffff0000, 0xff00ff00, 0xff888800, 0xff000000 );
+	feelsForce = ToggleButton( windowWidth/40, windowHeight/50, shortDim/15, shortDim/15, 0xff555555, 0xffffffff, 0xffaaaaaa, 0xff000000 );
+	exertsForce = ToggleButton( windowWidth/40, windowHeight*16/150, shortDim/15, shortDim/15, 0xff555555, 0xffffffff, 0xffaaaaaa, 0xff000000 );
 
 	setupParticles();
 }
@@ -89,26 +89,6 @@ void loop(){
 
 	partSys.draw(pixels, windowWidth, windowHeight, displayMode, colorMode);
 
-	if( displayMode == 0 ){
-		for( unsigned int setX = windowWidth - shortDim*4/50 - 11; setX < windowWidth - 10; setX ++ ){
-			pixels[ ( windowWidth * 10 ) + setX ] = 0xff000000;
-			pixels[ ( windowWidth * 11 ) + setX ] = 0xff000000;
-			pixels[ ( windowWidth * (9 + shortDim*7/50) ) + setX ] = 0xff000000;
-			pixels[ ( windowWidth * (10 + shortDim*7/50) ) + setX ] = 0xff000000;
-		}
-		for( unsigned int setY = 11; setY < shortDim*7/50 + 11; setY ++ ){
-			pixels[ ( windowWidth * setY ) + windowWidth - shortDim*2/25 - 11 ] = 0xff000000;
-			pixels[ ( windowWidth * setY ) + windowWidth - shortDim*2/25 - 10 ] = 0xff000000;
-			pixels[ ( windowWidth * setY ) + windowWidth - 11 ] = 0xff000000;
-			pixels[ ( windowWidth * setY ) + windowWidth - 12 ] = 0xff000000;
-		}
-		circle( windowWidth - shortDim/25.0 - 11, shortDim/25.0 + 10, shortDim/50.0, shortDim/100, 0xff00ff00, 0xff004400);
-		circle( windowWidth - shortDim/25.0 - 11, shortDim/10.0 + 10, shortDim/50.0, shortDim/100, 0xffff0000, 0xff440000);
-	}
-
-
-	button1.draw( pixels, windowWidth, mouseX, mouseY, mouseIsPressed, !moving );
-
 	pauseButton.draw( pixels, windowWidth, mouseX, mouseY, mouseIsPressed, !moving );
 	if( pauseButton.isPressed ){
 		for( unsigned int y = windowHeight*3/100; y < windowHeight*23/300; y ++ ){
@@ -129,35 +109,60 @@ void loop(){
 		}
 	}
 
-	if( selected ){
-		chargeButton.draw( pixels, windowWidth, mouseX, mouseY, mouseIsPressed, !moving );
-		if( chargeButton.isPressed ){
-			partSys.particles.back().charge = -1 * abs(partSys.particles.back().charge);
+	if( displayMode == 0 ){
+		for( unsigned int setX = windowWidth - shortDim*4/50 - 11; setX < windowWidth - 10; setX ++ ){
+			pixels[ ( windowWidth * 10 ) + setX ] = 0xff000000;
+			pixels[ ( windowWidth * 11 ) + setX ] = 0xff000000;
+			pixels[ ( windowWidth * (9 + shortDim*7/50) ) + setX ] = 0xff000000;
+			pixels[ ( windowWidth * (10 + shortDim*7/50) ) + setX ] = 0xff000000;
 		}
-		else{
-			partSys.particles.back().charge = abs(partSys.particles.back().charge);
+		for( unsigned int setY = 11; setY < shortDim*7/50 + 11; setY ++ ){
+			pixels[ ( windowWidth * setY ) + windowWidth - shortDim*2/25 - 11 ] = 0xff000000;
+			pixels[ ( windowWidth * setY ) + windowWidth - shortDim*2/25 - 10 ] = 0xff000000;
+			pixels[ ( windowWidth * setY ) + windowWidth - 11 ] = 0xff000000;
+			pixels[ ( windowWidth * setY ) + windowWidth - 12 ] = 0xff000000;
 		}
+		circle( windowWidth - shortDim/25.0 - 11, shortDim/25.0 + 10, shortDim/50.0, shortDim/100, 0xff00ff00, 0xff004400);
+		circle( windowWidth - shortDim/25.0 - 11, shortDim/10.0 + 10, shortDim/50.0, shortDim/100, 0xffff0000, 0xff440000);
 
 		feelsForce.draw( pixels, windowWidth, mouseX, mouseY, mouseIsPressed, !moving );
-		if( feelsForce.isPressed ){
-			partSys.particles.back().properties |= 0b10000000;
-		}
-		else{
-			partSys.particles.back().properties &= 0b01111111;
-			partSys.particles.back().velX = 0;
-			partSys.particles.back().velY = 0;
-		}
-
 		exertsForce.draw( pixels, windowWidth, mouseX, mouseY, mouseIsPressed, !moving );
-		if( exertsForce.isPressed ){
-			partSys.particles.back().properties |= 0b01000000;
-		}
-		else{
-			partSys.particles.back().properties &= 0b10111111;
-		}
 
-		if( chargeButton.justPressed || pauseButton.justPressed || feelsForce.justPressed || exertsForce.justPressed ){ deSelect = false; }
+		if( selected ){
+			chargeButton.draw( pixels, windowWidth, mouseX, mouseY, mouseIsPressed, !moving );
+			if( chargeButton.justSet ){
+				if( chargeButton.isPressed ){
+					partSys.particles.back().charge = -1 * abs(partSys.particles.back().charge);
+				}
+				else{
+					partSys.particles.back().charge = abs(partSys.particles.back().charge);
+				}
+			}
+
+			if( feelsForce.justSet ){
+				if( feelsForce.isPressed ){
+					partSys.particles.back().properties |= 0b10000000;
+				}
+				else{
+					partSys.particles.back().properties &= 0b01111111;
+					partSys.particles.back().velX = 0;
+					partSys.particles.back().velY = 0;
+				}
+			}
+
+			if( exertsForce.justSet ){
+				if( exertsForce.isPressed ){
+					partSys.particles.back().properties |= 0b01000000;
+				}
+				else{
+					partSys.particles.back().properties &= 0b10111111;
+				}
+			}
+
+			if( chargeButton.justPressed || pauseButton.justPressed || feelsForce.justPressed || exertsForce.justPressed ){ deSelect = false; }
+		}
 	}
+
 
 	resetButton.draw( pixels, windowWidth, mouseX, mouseY, mouseIsPressed, !moving );
 	if( resetButton.released ){
@@ -169,26 +174,31 @@ void loop(){
 		setupParticles();
 	}
 
-	if( button1.isPressed ){
-		displayMode = 0;
-		if( !moving ){
-			for( auto i = partSys.particles.begin(); i != partSys.particles.end(); ){
-				if( (*i).x < 0 || (*i).x > (windowWidth*1.0 / shortDim)  ||  (*i).y < 0 || (*i).y > (windowHeight*1.0 / shortDim) ){
-					if( (*i).properties & 0b00010000 ){
-						selected = false;
-						moving = false;
-					}
-					i = partSys.particles.erase( i );
-				}
-				else{
-					++i;
-				}
-			}
+	button1.draw( pixels, windowWidth, mouseX, mouseY, mouseIsPressed, !moving );
+	if(  button1.justSet  ){
+		if( button1.isPressed ){
+			displayMode = 0;
+			feelsForce.isPressed = true;
+			exertsForce.isPressed = true;
+		}
+		else{
+			displayMode = 1;
+			colorMode = 2;
 		}
 	}
-	else{
-		displayMode = 1;
-		colorMode = 2;
+	if( button1.isPressed && !moving ){
+		for( auto i = partSys.particles.begin(); i != partSys.particles.end(); ){
+			if( (*i).x < 0 || (*i).x > (windowWidth*1.0 / shortDim)  ||  (*i).y < 0 || (*i).y > (windowHeight*1.0 / shortDim) ){
+				if( (*i).properties & 0b00010000 ){
+					selected = false;
+					moving = false;
+				}
+				i = partSys.particles.erase( i );
+			}
+			else{
+				++i;
+			}
+		}
 	}
 
 	if( displayMode == 0 ){
@@ -223,27 +233,24 @@ void mousePressed(){
 			if( mouseY <= shortDim*3/50 + 10 ){
 				if(  square( (double)mouseX - windowWidth + shortDim/25 + 11 ) + square( (double)mouseY - shortDim/25 - 10 ) < square( shortDim / 50 ) ){
 					partSys.particles.back().properties &= 0b11100111;
-					partSys.addParticle( 1, windowWidth/2, windowHeight, 0, 0, 0b11011000 );
+					partSys.addParticle( 1, windowWidth/2, windowHeight, 0, 0, 0b00011000 );
 					chargeButton.isPressed = false;
-					feelsForce.isPressed = true;
-					exertsForce.isPressed = true;
 					moving = true;
-					selected = true;
-					offsetX = (-(double)mouseX - shortDim/25.0 + windowWidth - 11) / shortDim;
 					offsetY = (-(double)mouseY + shortDim/25.0 + 10) / shortDim;
 				}
 			}
 			else if( mouseY >= shortDim*2/25 + 10  &&
 			        square( (double)mouseX - windowWidth + shortDim/25 + 11 ) + square( (double)mouseY - shortDim/10 - 10 ) < square( shortDim / 50 ) ){
 				partSys.particles.back().properties &= 0b11100111;
-				partSys.addParticle( -1, windowWidth/2, windowHeight, 0, 0, 0b11011000 );
+				partSys.addParticle( -1, windowWidth/2, windowHeight, 0, 0, 0b00011000 );
 				chargeButton.isPressed = true;
-				feelsForce.isPressed = true;
-				exertsForce.isPressed = true;
 				moving = true;
+				offsetY = (-(double)mouseY + shortDim/10.0 + 10) / shortDim;
+			}
+			if( moving ){
+				partSys.particles.back().properties +=  (feelsForce.isPressed<<7) + (exertsForce.isPressed<<6);
 				selected = true;
 				offsetX = (-(double)mouseX - shortDim/25.0 + windowWidth - 11) / shortDim;
-				offsetY = (-(double)mouseY + shortDim/10.0 + 10) / shortDim;
 			}
 		}
 	}
@@ -263,8 +270,8 @@ void windowResized(){
 	button1.moveResize( windowWidth*34/40, windowHeight*137/150, windowWidth/8, windowHeight/15 );
 	pauseButton.moveResize( windowWidth*9/20, windowHeight/50, windowWidth/10, windowHeight/15 );
 	resetButton.moveResize( windowWidth/40, windowHeight*137/150, windowWidth/8, windowHeight/15 );
-	chargeButton.moveResize( windowWidth/40, windowHeight/50, windowWidth/8, windowHeight/15 );
-	feelsForce.moveResize( windowWidth/40, windowHeight*16/150, shortDim/15, shortDim/15 );
+	chargeButton.moveResize( windowWidth*5/80 + shortDim/15, windowHeight/50, windowWidth*3/32, windowHeight/15 );
+	feelsForce.moveResize( windowWidth/40, windowHeight/50, shortDim/15, shortDim/15 );
 	exertsForce.moveResize( windowWidth/40, windowHeight*16/150, shortDim/15, shortDim/15 );
 }
 

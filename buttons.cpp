@@ -32,6 +32,7 @@ ToggleButton::ToggleButton( unsigned int setX, unsigned int setY, unsigned int s
 }
 
 void ToggleButton::draw( Uint32*& pixels, unsigned int windowWidth, unsigned int mouseX, unsigned int mouseY, bool mousePressed, bool active ){
+	justSet = false;
 	if( active   &&   mouseX >= x && mouseX <= x+width  &&  mouseY >= y && mouseY <= y+height ){
 		if( mousePressed ){
 			if( held ){
@@ -46,6 +47,7 @@ void ToggleButton::draw( Uint32*& pixels, unsigned int windowWidth, unsigned int
 		else{
 			if( held ){
 				held = false;
+				justSet = true;
 				isPressed = !isPressed;
 			}
 		if( isPressed ){ usedColor = onColor; }
@@ -99,8 +101,8 @@ PushButton::PushButton( unsigned int setX, unsigned int setY, unsigned int setWi
 }
 
 void PushButton::draw( Uint32*& pixels, unsigned int windowWidth, unsigned int mouseX, unsigned int mouseY, bool mousePressed, bool active ){
+	released = false;
 	if( active   &&   mouseX >= x && mouseX <= x+width  &&  mouseY >= y && mouseY <= y+height ){
-		released = false;
 		if( mousePressed ){
 			if( held ){ pressed = false; }
 			else{

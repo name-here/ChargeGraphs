@@ -21,6 +21,7 @@ class ToggleButton: public Button{
 public:
 	bool justPressed = false;//button was just pressed last frame
 	bool isPressed = false;//button is active (toggled on)
+	bool justSet = false;//button was just released last frame
 
 	Uint32 onColor;// = 0xff996614;//These store colors (Uint32 used for convient color setting)
 	/*Uint32 offColor = 0xffffaa22;
