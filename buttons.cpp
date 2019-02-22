@@ -10,17 +10,25 @@ void Button::moveResize( unsigned int setX, unsigned int setY, unsigned int setW
 }
 
 
-ToggleButton::ToggleButton(){
-	x = 0;
-	y = 0;
-	width = 0;
-	height = 0;
-}
 ToggleButton::ToggleButton( unsigned int setX, unsigned int setY, unsigned int setWidth, unsigned int setHeight ){
 	x = setX;
 	y = setY;
 	width = setWidth;
 	height = setHeight;
+	onColor = 0xff996614;
+	offColor = 0xffffaa22;
+	pressedColor = 0xff66440d;
+	borderColor = 0xff000000;
+}
+ToggleButton::ToggleButton( unsigned int setX, unsigned int setY, unsigned int setWidth, unsigned int setHeight, Uint32 setOnColor, Uint32 setOffColor, Uint32 setPressedColor, Uint32 setBorderColor ){
+	x = setX;
+	y = setY;
+	width = setWidth;
+	height = setHeight;
+	onColor = setOnColor;
+	offColor = setOffColor;
+	pressedColor = setPressedColor;
+	borderColor = setBorderColor;
 }
 
 void ToggleButton::draw( Uint32*& pixels, unsigned int windowWidth, unsigned int mouseX, unsigned int mouseY, bool mousePressed, bool active ){
@@ -37,6 +45,7 @@ void ToggleButton::draw( Uint32*& pixels, unsigned int windowWidth, unsigned int
 		}
 		else{
 			if( held ){
+				held = false;
 				isPressed = !isPressed;
 			}
 		if( isPressed ){ usedColor = onColor; }
@@ -44,11 +53,9 @@ void ToggleButton::draw( Uint32*& pixels, unsigned int windowWidth, unsigned int
 		}
 	}
 	else{
+		held = false;
 		if( isPressed ){ usedColor = onColor; }
 		else{ usedColor = offColor; }
-	}
-	if( held && !mousePressed ){
-		held = false;
 	}
 	for( unsigned int setX = x; setX < x + width; setX ++ ){
 		pixels[ ( windowWidth * y ) + setX ] = borderColor;
@@ -70,17 +77,25 @@ void ToggleButton::draw( Uint32*& pixels, unsigned int windowWidth, unsigned int
 }
 
 
-PushButton::PushButton(){
-	x = 0;
-	y = 0;
-	width = 0;
-	height = 0;
-}
 PushButton::PushButton( unsigned int setX, unsigned int setY, unsigned int setWidth, unsigned int setHeight ){
 	x = setX;
 	y = setY;
 	width = setWidth;
 	height = setHeight;
+	offColor = 0xffaaff22;
+	hoverColor = 0xff88cc1b;
+	pressedColor = 0xff44660d;
+	borderColor = 0xff000000;
+}
+PushButton::PushButton( unsigned int setX, unsigned int setY, unsigned int setWidth, unsigned int setHeight, Uint32 setOffColor, Uint32 setHoverColor, Uint32 setPressedColor, Uint32 setBorderColor ){
+	x = setX;
+	y = setY;
+	width = setWidth;
+	height = setHeight;
+	offColor = setOffColor;
+	hoverColor = setHoverColor;
+	pressedColor = setPressedColor;
+	borderColor = setBorderColor;
 }
 
 void PushButton::draw( Uint32*& pixels, unsigned int windowWidth, unsigned int mouseX, unsigned int mouseY, bool mousePressed, bool active ){
@@ -104,6 +119,7 @@ void PushButton::draw( Uint32*& pixels, unsigned int windowWidth, unsigned int m
 		}
 	}
 	else{
+		held = false;
 		usedColor = offColor;
 	}
 	for( unsigned int setX = x; setX < x + width; setX ++ ){
