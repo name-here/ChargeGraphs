@@ -51,16 +51,8 @@ void ParticleSystem::draw( Uint32*& pixels, unsigned int windowWidth, unsigned i
 						normX = x*windowWidth/shortDim;
 						normY = y*windowHeight/shortDim;
 
-						if( displayMode > 0 ){
-							potential = 0;
-							for( auto i = particles.begin(); i!=particles.end(); ++i ){
-								if( (*i).properties & 0b01000000 ){
-									potential += (*i).charge / dist2D( normX, normY, (*i).x, (*i).y );
-								}
-							}
-						}
-
 						if( displayMode == 1 ){
+							potential = getPotential( normX, normY );
 							setX = (unsigned int) (  ( (x * windowWidth) + ((1 - y) * windowHeight) ) * (windowWidth - 1) / (windowWidth + windowHeight)  );
 							setY = (unsigned int) (  windowHeight * (0.375 + x/8 + y/8 - potential/100)  );
 							if( setY < windowHeight  &&  setY > 0  &&  pixels[ (setY * windowWidth) + setX ] == 0x7f7f7f7f ){
@@ -70,7 +62,7 @@ void ParticleSystem::draw( Uint32*& pixels, unsigned int windowWidth, unsigned i
 						}
 						else if( displayMode == 2 ){
 							if( subX == 0  &&  subY == 0 ){
-								set( pixels, windowWidth, windowHeight, screenX, screenY, getColor( potential, colorMode ) );
+								set( pixels, windowWidth, windowHeight, screenX, screenY, getColor( getPotential( normX, normY ), colorMode ) );
 							}
 						}
 						else if( displayMode == 3 ){
@@ -131,7 +123,12 @@ void ParticleSystem::drawDots( Uint32*& pixels, unsigned int windowWidth, unsign
 					unsigned int setX = (int)( x  +  (*i).x * shortDim );
 					unsigned int setY = (int)( y  +  (*i).y * shortDim );
 					if( setX < windowWidth  &&  setY < windowHeight ){
-						if( x*x + y*y < square( abs((*i).charge) * shortDim / 50 - shortDim/100 ) ){ color = fill; }
+						if( x*x + y*y < square( abs((*i).charge) * shortDim / 50 - shortDim/100 ) ){
+							if( !((*i).properties & 0b10000000)  &&  x*x + y*y < square( shortDim / 150 ) ){
+								color = 0xff000000;
+							}
+							else{ color = fill; }
+						}
 						else{ color = border; }
 						pixels[ ( setY * windowWidth) + setX ] = color;
 					}
@@ -165,7 +162,7 @@ void ParticleSystem::simulate(){
 
 Color ParticleSystem::getColor( double potential, int colorMode ){
 	Color color;
-	int shade = (int)( potential * 128 ) + 256;
+	int shade = ((int)( potential * 128 ) + 256)*6;
 	if( colorMode == 0 ){
 		shade /= 10;
 		if( shade>255 ) { shade = 255; }
@@ -181,9 +178,9 @@ Color ParticleSystem::getColor( double potential, int colorMode ){
 		shade += intermediate;
 	}
 	else if( colorMode == 2 ){
-		shade %= 255;
-		if( shade < 0 ){ shade += 255; }
-		color.setHue(shade);
+		shade %= 255*6;
+		if( shade < 0 ){ shade += 255*6; }
+		color.setHue( shade );
 		
 	}
 	if( colorMode < 2 ){
@@ -192,6 +189,16 @@ Color ParticleSystem::getColor( double potential, int colorMode ){
 		color.b = shade;
 	}
 	return color;
+}
+
+inline double ParticleSystem::getPotential( double x, double y ){
+	double potential = 0;
+	for( auto i = particles.begin(); i!=particles.end(); ++i ){
+		if( (*i).properties & 0b01000000 ){
+			potential += (*i).charge / dist2D( x, y, (*i).x, (*i).y );
+		}
+	}
+	return potential;
 }
 
 void ParticleSystem::addParticle( double setCharge, double setParticleX, double setParticleY, double setParticleVelX, double setParticleVelY, char setProperties ){
