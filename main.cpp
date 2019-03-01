@@ -313,9 +313,13 @@ void windowResized(){
 	viewButton.moveResize( windowWidth*34/40, windowHeight*137/150, windowWidth/8, windowHeight/15 );
 	pauseButton.moveResize( windowWidth*9/20, windowHeight/50, windowWidth/10, windowHeight/15 );
 	resetButton.moveResize( windowWidth/40, windowHeight*137/150, windowWidth/8, windowHeight/15 );
+	showVecButton.moveResize( windowWidth*9/20, windowHeight*137/150, windowWidth/10, windowHeight/15 );
+	addLockedButton.moveResize( windowWidth*39/40 - shortDim/15, windowHeight/25 + shortDim*7/50, shortDim/15, shortDim/15 );
 	chargeButton.moveResize( windowWidth*5/80 + shortDim/15, windowHeight/50, windowWidth*3/32, windowHeight/15 );
 	lockedButton.moveResize( windowWidth/40, windowHeight/50, shortDim/15, shortDim/15 );
 	//exertsForce.moveResize( windowWidth/40, windowHeight*16/150, shortDim/15, shortDim/15 );
+
+	
 }
 
 
