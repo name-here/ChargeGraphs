@@ -34,6 +34,7 @@ bool mouseIsPressed;
 
 int displayMode = 0;
 int colorMode = 2;
+int startSystem = 2;
 
 ParticleSystem partSys;
 
@@ -53,11 +54,23 @@ ToggleButton addLockedButton;
 //ToggleButton exertsForce;//Toggles whether selected particle exerts forces on others
 
 void setupParticles(){
-	partSys.addParticle( 1, 0.25 * windowWidth / shortDim, 0.25 * windowHeight / shortDim, 0, 0, 0b01000000 );
-	partSys.addParticle( 1, 0.75 * windowWidth / shortDim, 0.25 * windowHeight / shortDim, 0, 0, 0b01000000 );
-	partSys.addParticle( 1, 0.25 * windowWidth / shortDim, 0.75 * windowHeight / shortDim, 0, 0, 0b01000000 );
-	partSys.addParticle( 1, 0.75 * windowWidth / shortDim, 0.75 * windowHeight / shortDim, 0, 0, 0b01000000 );
-	partSys.addParticle( 2, 0.4 * windowWidth / shortDim, 0.5 * windowHeight / shortDim, 0, 0, 0b11000000 );
+	if( startSystem == 1 ){
+		partSys.addParticle( 1, 0.25 * windowWidth / shortDim, 0.25 * windowHeight / shortDim, 0, 0, 0b01000000 );
+		partSys.addParticle( 1, 0.75 * windowWidth / shortDim, 0.25 * windowHeight / shortDim, 0, 0, 0b01000000 );
+		partSys.addParticle( 1, 0.25 * windowWidth / shortDim, 0.75 * windowHeight / shortDim, 0, 0, 0b01000000 );
+		partSys.addParticle( 1, 0.75 * windowWidth / shortDim, 0.75 * windowHeight / shortDim, 0, 0, 0b01000000 );
+		partSys.addParticle( 2, 0.4 * windowWidth / shortDim, 0.5 * windowHeight / shortDim, 0, 0, 0b11000000 );
+	}
+	else if( startSystem == 2 ){
+		partSys.addParticle( 1, 0.25 * windowWidth / shortDim, 0.5 * windowHeight/shortDim, 0, 0, 0b01000000 );
+		partSys.addParticle( 1, 0.75 * windowWidth / shortDim, 0.5 * windowHeight/shortDim, 0, 0, 0b01000000 );
+		partSys.addParticle( -1, 0.5 * windowWidth / shortDim, 0.5 * windowHeight/shortDim, 0.005 * windowWidth / shortDim, 0.01 * windowHeight / shortDim, 0b11000000 );
+	}
+	else if( startSystem == 3){
+		for( int i = 0; i < 100; i ++){
+			partSys.addParticle( 1, 0.25 * windowWidth / shortDim, 0.5 * windowHeight/shortDim, 0, 0, 0b01000000 );
+		}
+	}
 }
 
 void setup(){
@@ -212,23 +225,47 @@ void loop(){
 
 		if( showVecButton.isPressed ){
 			double intermediate;
-			double fieldX = 0, fieldY = 0;
+			double forceX = 0, forceY = 0;
+			unsigned int setX, endX, setY, endY;
 			for( auto i = partSys.particles.begin(); i != partSys.particles.end(); ++i ){
-				if( (*i).properties & 0b10000000  &&  !( (*i).properties & 0b00001000 ) ){
-					fieldX = 0; fieldY = 0;
+				if( (*i).properties & 0b10000000 ){
+					forceX = 0; forceY = 0;
 					for( auto iSub = partSys.particles.begin(); iSub != partSys.particles.end(); ++iSub ){
 						if( (*iSub).id != (*i).id  &&  (*iSub).properties & 0b01000000 ){
 							intermediate = (-1 * (*iSub).charge) / cube( dist2D((*i).x, (*i).y, (*iSub).x, (*iSub).y) );
-							fieldX += intermediate * ( (*iSub).x - (*i).x );
-							fieldY += intermediate * ( (*iSub).y - (*i).y );
+							forceX += intermediate * ( (*iSub).x - (*i).x ) * (*i).charge;
+							forceY += intermediate * ( (*iSub).y - (*i).y ) * (*i).charge;
 						}
 					}
-					for( unsigned int setX = (unsigned int)abs( (*i).x * shortDim ); setX  <  (unsigned int)abs( ((*i).x + fieldX/100) * shortDim ); setX ++ ){
-						for( unsigned int setY = (unsigned int)abs( (*i).y * shortDim ); setY  <=  (unsigned int)abs( ((*i).y + fieldY/100) * shortDim ); setY ++ ){
-							if( setX < windowWidth  &&  setY < windowHeight  &&  (setY * windowWidth) + setX < windowWidth * windowHeight ){
-								pixels[ (setY * windowWidth) + setX ] = 0xff0000ff;
-							}
+					if( forceX >= 0 || true ){
+						setX = (unsigned int)abs( (*i).x * shortDim );
+						endX = (unsigned int)abs( ((*i).x + forceX/100) * shortDim );
+					}
+					else{
+						setX = (unsigned int)abs( ((*i).x + forceX/100) * shortDim );
+						endX = (unsigned int)abs( (*i).x * shortDim );
+					}
+					if( forceY >= 0 ){
+						setY = (unsigned int)abs( (*i).y * shortDim );
+						endY = (unsigned int)abs( ((*i).y + forceY/100) * shortDim );
+					}
+					else{
+						setY = (unsigned int)abs( ((*i).y + forceY/100) * shortDim );
+						endY = (unsigned int)abs( (*i).y * shortDim );
+					}
+					//if( endX == setX ){ endX ++; }
+					if( endX >= windowWidth ){ endX = windowWidth - 1; }
+					//if( endY == setY ){ endY ++; }
+					if( endY >= windowHeight ){ endY = windowHeight - 1; }
+					for( ; setX <= endX; setX ++ ){
+						if( setX < windowWidth  &&  (*i).y < windowHeight  &&  ((*i).y * windowWidth) + setX < windowWidth * windowHeight ){
+							pixels[  ( (unsigned int)( (*i).y * shortDim ) /*+offset to make line diagonal*/) * windowWidth  +  setX  ] = 0xff0000ff;
 						}
+					}
+					for( ; setY <= endY; setY ++ ){//for( unsigned int setY = (unsigned int)abs( (*i).y * shortDim ); setY  <=  (unsigned int)abs( ((*i).y + fieldY/100) * shortDim ); setY ++ ){
+						//if( (*i).x < windowWidth  &&  setY < windowHeight  &&  (setY * windowWidth) + (*i).x < windowWidth * windowHeight ){
+							pixels[  ( setY * windowWidth )  +  (unsigned int)( (*i).x * shortDim )  ] = 0xff0000ff;
+						//}
 					}
 				}
 			}
@@ -291,6 +328,7 @@ void mousePressed(){
 			}
 			if( moving ){
 				partSys.particles.back().properties +=  (!addLockedButton.isPressed<<7) /*+ (exertsForce.isPressed<<6)*/;
+				lockedButton.isPressed = addLockedButton.isPressed;
 				selected = true;
 				offsetX = ( -(double)mouseX - shortDim/25.0 + windowWidth*39/40 ) / shortDim;
 			}

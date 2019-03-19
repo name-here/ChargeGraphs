@@ -9,7 +9,7 @@ struct Particle{
 	double velX; double velY;
 	unsigned char properties;
 	//particleProperties is a series of switches for properties of particle, in order:
-	//feels force | exerts force | TODO: mark location? (2D only) | selected | being moved | unused | unused | unused
+	//feels force | exerts force | TODO: mark location? (2D only?) | selected | being moved | unused | unused | unused
 };
 
 class ParticleSystem{
