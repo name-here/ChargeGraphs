@@ -9,6 +9,7 @@
 
 void set( unsigned int x, unsigned int y, Color color );
 void circle( double posX, double posY, double radius, double borderWidth, double dotSize, Uint32 fill, Uint32 border, Uint32 dotColor );
+void line( int x1, int y1, int x2, int y2, Uint32 color );
 inline double square( double num ){return num * num;}
 inline double cube( double num ){return num * num * num;}
 inline double dist2DSq( double x1, double y1, double x2, double y2 ){
@@ -32,9 +33,10 @@ double sclMouseX;
 double sclMouseY;
 bool mouseIsPressed;
 
-int displayMode = 0;
-int colorMode = 2;
-int startSystem = 2;
+unsigned int displayMode = 0;
+unsigned int colorMode = 2;
+unsigned int startSystem = 2;
+unsigned int gridNum = 10;
 
 ParticleSystem partSys;
 
@@ -226,7 +228,30 @@ void loop(){
 		if( showVecButton.isPressed ){
 			double intermediate;
 			double forceX = 0, forceY = 0;
-			unsigned int setX, endX, setY, endY;
+
+			for( unsigned int loopX = 1; loopX <= gridNum; loopX ++ ){
+				double vecX = (double)loopX * windowWidth / shortDim / (gridNum + 1);
+				for( unsigned int loopY = 1; loopY <= gridNum; loopY ++ ){
+					double vecY = (double)loopY * windowHeight / shortDim / (gridNum + 1);
+					forceX = 0; forceY = 0;
+					for( auto i = partSys.particles.begin(); i != partSys.particles.end(); ++i ){
+						intermediate = (-1 * (*i).charge) / cube( dist2D(vecX, vecY, (*i).x, (*i).y) );
+						forceX += intermediate * ( (*i).x - vecX );
+						forceY += intermediate * ( (*i).y - vecY );
+					}
+					{//to make temp temporary
+						double temp = sqrt(forceX*forceX + forceY*forceY);
+						if( temp > 600.0/(gridNum + 1) ){
+							//Color color;
+							//color.setHue(  );
+							forceX *= 600.0 / (gridNum + 1) / temp;
+							forceY *= 600.0 / (gridNum + 1) / temp;
+						}
+					}
+					line( (int)( vecX * shortDim ), (int)( vecY * shortDim ), (int)abs( (vecX + forceX/1000) * shortDim ), (int)abs( (vecY + forceY/1000) * shortDim ), 0xff00ff00 );
+				}
+			}
+
 			for( auto i = partSys.particles.begin(); i != partSys.particles.end(); ++i ){
 				if( (*i).properties & 0b10000000 ){
 					forceX = 0; forceY = 0;
@@ -237,50 +262,18 @@ void loop(){
 							forceY += intermediate * ( (*iSub).y - (*i).y ) * (*i).charge;
 						}
 					}
-					if( forceX >= 0 || true ){
-						setX = (unsigned int)abs( (*i).x * shortDim );
-						endX = (unsigned int)abs( ((*i).x + forceX/100) * shortDim );
-					}
-					else{
-						setX = (unsigned int)abs( ((*i).x + forceX/100) * shortDim );
-						endX = (unsigned int)abs( (*i).x * shortDim );
-					}
-					if( forceY >= 0 ){
-						setY = (unsigned int)abs( (*i).y * shortDim );
-						endY = (unsigned int)abs( ((*i).y + forceY/100) * shortDim );
-					}
-					else{
-						setY = (unsigned int)abs( ((*i).y + forceY/100) * shortDim );
-						endY = (unsigned int)abs( (*i).y * shortDim );
-					}
-					//if( endX == setX ){ endX ++; }
-					if( endX >= windowWidth ){ endX = windowWidth - 1; }
-					//if( endY == setY ){ endY ++; }
-					if( endY >= windowHeight ){ endY = windowHeight - 1; }
-					for( ; setX <= endX; setX ++ ){
-						if( setX < windowWidth  &&  (*i).y < windowHeight  &&  ((*i).y * windowWidth) + setX < windowWidth * windowHeight ){
-							pixels[  ( (unsigned int)( (*i).y * shortDim ) /*+offset to make line diagonal*/) * windowWidth  +  setX  ] = 0xff0000ff;
+					{//to make temp temporary
+						double temp = sqrt(forceX*forceX + forceY*forceY);
+						if( temp > 600.0/(gridNum + 1) ){
+							//Color color;
+							//color.setHue(  );
+							forceX *= 600.0 / (gridNum + 1) / temp;
+							forceY *= 600.0 / (gridNum + 1) / temp;
 						}
 					}
-					for( ; setY <= endY; setY ++ ){//for( unsigned int setY = (unsigned int)abs( (*i).y * shortDim ); setY  <=  (unsigned int)abs( ((*i).y + fieldY/100) * shortDim ); setY ++ ){
-						//if( (*i).x < windowWidth  &&  setY < windowHeight  &&  (setY * windowWidth) + (*i).x < windowWidth * windowHeight ){
-							pixels[  ( setY * windowWidth )  +  (unsigned int)( (*i).x * shortDim )  ] = 0xff0000ff;
-						//}
-					}
+					line( (int)( (*i).x * shortDim ), (int)( (*i).y * shortDim ), (int)abs( ((*i).x + forceX/1000) * shortDim ), (int)abs( ((*i).y + forceY/1000) * shortDim ), 0xff0000ff );
 				}
 			}
-
-			/*for(){
-				intermediate = 0;
-				fieldX = 0; fieldY = 0;
-				for( auto i = partSys.particles.begin(); i != partSys.particles.end(); ++i ){
-					intermediate = 1 / cube( dist2D(normX, normY, (*i).x, (*i).y) );
-					fieldX += intermediate * ( (*i).x - normX );
-					fieldY += intermediate * ( (*i).y - normY );
-				}
-				Color color;
-				//color.setHue(  );
-			}*/
 		}
 	}
 }
@@ -466,11 +459,34 @@ void circle( double posX, double posY, double radius, double borderWidth, double
 		}
 	}
 }
+void line( int x1, int y1, int x2, int y2, Uint32 color ){
+	int setX, setY;
+	if( x2 == x1 ){ x2 ++; }
+	if( y2 == y1 ){ y2 ++; }
+	char addByX, addByY;
+	if( x1 < x2 ){ addByX = 1; }
+	else{ addByX = -1; }
+	if( y1 < y2 ){ addByY = 1; }
+	else{ addByY = -1; }
+
+	for(setX = x1; setX != x2; setX += addByX){
+		setY = y1 + (y2 - y1) * (setX - x1) / (x2 - x1);
+		if( (unsigned int)setX < windowWidth  &&  (unsigned int)setY < windowHeight  &&  (unsigned int)((setY*windowWidth)+setX) < windowWidth*windowHeight ){
+			pixels[  ( setY * windowWidth ) + setX  ] = color;
+		}
+	}
+	for(setY = y1; setY != y2; setY += addByY){
+		setX = x1 + (x2 - x1) * (setY - y1) / (y2 - y1);
+		if( (unsigned int)setX < windowWidth  &&  (unsigned int)setY < windowHeight  &&  (unsigned int)((setY*windowWidth)+setX) < windowWidth*windowHeight ){
+			pixels[ ( setY * windowWidth ) + setX ] = color;
+		}
+	}
+}
 
 
 void set( unsigned int x, unsigned int y, Color color ){
 	if( x < windowWidth  &&  y < windowHeight  &&  (y*windowWidth)+x < windowWidth*windowHeight ){
-		pixels[ (y*windowWidth)+x ] = ( 255 << 24 ) + ( color.r << 16 )  + ( color.g << 8 )  +  color.b;
+		pixels[ ( y * windowWidth ) + x ] = ( 255 << 24 ) + ( color.r << 16 )  + ( color.g << 8 )  +  color.b;
 	}
 	else{ printf( "Tried to draw pixel out of bounds at (%i, %i)\n", x, y ); }
 }
